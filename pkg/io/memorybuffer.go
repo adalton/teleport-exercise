@@ -25,9 +25,10 @@ const DefaultInitialMemoryBufferCapacity = 4096
 // it has been read to enable multiple clients to read what is written to this
 // buffer.
 type MemoryBuffer struct {
-	mutex   sync.RWMutex
-	content []byte
-	closed  bool
+	mutex    sync.RWMutex
+	waitCond *sync.Cond
+	content  []byte
+	closed   bool
 }
 
 // NewMemoryBuffer creates and returns a MemoryBuffer with an initial capacity
@@ -39,9 +40,13 @@ func NewMemoryBuffer() *MemoryBuffer {
 // NewMemoryBufferDetailed creates and returns a MemoryBuffer with the given
 // initialCapacity.
 func NewMemoryBufferDetailed(initialCapacity int) *MemoryBuffer {
-	return &MemoryBuffer{
+	b := &MemoryBuffer{
 		content: make([]byte, 0, initialCapacity),
 	}
+
+	b.waitCond = sync.NewCond(&b.mutex)
+
+	return b
 }
 
 // Write appends newContent to this MemoryBuffer.  The returned bytesWritten is
@@ -55,6 +60,7 @@ func (b *MemoryBuffer) Write(newContent []byte) (bytesWritten int, err error) {
 	}
 
 	b.content = append(b.content, newContent...)
+	b.waitCond.Broadcast()
 
 	return len(newContent), nil
 }
@@ -82,6 +88,7 @@ func (b *MemoryBuffer) Close() error {
 	defer b.mutex.Unlock()
 
 	b.closed = true
+	b.waitCond.Broadcast()
 
 	return nil
 }
@@ -100,4 +107,19 @@ func (b *MemoryBuffer) Closed() bool {
 	defer b.mutex.Unlock()
 
 	return b.closed
+}
+
+// waitForChange blocks waiting for a change to this memory buffer.  The given
+// size is the last known buffer size.  This function unblocks if:
+// * The size is less than the current size of the buffer
+// * The buffer is closed.
+func (b *MemoryBuffer) waitForChange(size int64) (newBufferSize int64, closed bool) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	for !b.closed && size == int64(len(b.content)) {
+		b.waitCond.Wait()
+	}
+
+	return int64(len(b.content)), b.closed
 }
