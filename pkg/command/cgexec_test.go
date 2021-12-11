@@ -118,6 +118,6 @@ func Test_Cgexec_Exec(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, commandName, execRecorder.Argv0)
-	assert.Equal(t, commandName, execRecorder.Argv0)
+	assert.Equal(t, argv, execRecorder.Argv)
 	assert.Equal(t, env, execRecorder.Envv)
 }
