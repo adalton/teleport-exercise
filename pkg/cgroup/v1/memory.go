@@ -25,11 +25,11 @@ type memory struct {
 	limit *string
 }
 
-func NewMemory() *memory {
-	return NewMemoryDetailed(nil)
+func NewMemoryController() *memory {
+	return NewMemoryControllerDetailed(nil)
 }
 
-func NewMemoryDetailed(osAdapter *os.Adapter) *memory {
+func NewMemoryControllerDetailed(osAdapter *os.Adapter) *memory {
 	return &memory{
 		base: newBase("memory", osAdapter),
 	}

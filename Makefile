@@ -14,7 +14,7 @@ cgexec: GOOS=linux
 cgexec: GOARCH=amd64
 cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build'
 cgexec: builddir cmd/cgexec/cgexec.go
-	go build -o build/goexec cmd/cgexec/cgexec.go
+	go build -o build/cgexec cmd/cgexec/cgexec.go
 .PHONY: cgexec
 
 clean:

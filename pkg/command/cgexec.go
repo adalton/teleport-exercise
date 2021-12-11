@@ -58,7 +58,7 @@ func CgexecDetailed(args []string, osa *os.Adapter, sa *syscall.Adapter) error {
 
 	pid := fmt.Sprintf("%d", osa.Getpid())
 	for _, taskFile := range taskFileList {
-		if err := osa.WriteFileFn(taskFile, []byte(pid), DefaultPerms); err != nil {
+		if err := osa.WriteFile(taskFile, []byte(pid), DefaultPerms); err != nil {
 			return err
 		}
 	}
