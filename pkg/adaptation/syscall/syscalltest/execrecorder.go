@@ -11,27 +11,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ostest
+package syscalltest
 
-import "github.com/adalton/teleport-exercise/pkg/adaptation/os"
+import "fmt"
 
-type WriteFileRecord struct {
-	Name string
-	Data []byte
-	Perm os.FileMode
+type ExecRecorder struct {
+	Argv0 string
+	Argv  []string
+	Envv  []string
+	Error error
 }
 
-type WriteFileRecorder struct {
-	Events    []*WriteFileRecord
-	NextError error
-}
+func (n *ExecRecorder) Exec(argv0 string, argv []string, envv []string) (err error) {
+	n.Argv0 = argv0
+	n.Argv = argv
+	n.Envv = envv
 
-func (w *WriteFileRecorder) WriteFile(name string, data []byte, perm os.FileMode) error {
-	w.Events = append(w.Events, &WriteFileRecord{
-		Name: name,
-		Data: data,
-		Perm: perm,
-	})
+	err = n.Error
+	if err == nil {
+		// Exec must never return a non-error value
+		err = fmt.Errorf("nilexec: exec failed")
+	}
 
-	return w.NextError
+	return err
 }
