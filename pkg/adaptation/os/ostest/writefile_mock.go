@@ -21,6 +21,9 @@ type WriteFileRecord struct {
 	Perm os.FileMode
 }
 
+// WriteFileMock is a component that provides a mock implementation of the
+// os.WriteFile() function.  The implementation records the paramters received
+// and returns the configured NextError.
 type WriteFileMock struct {
 	Events    []*WriteFileRecord
 	NextError error

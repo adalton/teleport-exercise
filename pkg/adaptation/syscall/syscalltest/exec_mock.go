@@ -15,6 +15,10 @@ package syscalltest
 
 import "fmt"
 
+// ExecMock is a mock implementation of the Exec system call wrapper.
+// This implementation returns the received parameters and returns the
+// configured error. If no error is specified, this implementation will
+// create one to return.
 type ExecMock struct {
 	Argv0 string
 	Argv  []string

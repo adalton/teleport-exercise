@@ -23,6 +23,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// mockJob is a simple implementation of the Job interface for use by unit tests
 type mockJob struct {
 	owner   string
 	name    string
@@ -32,6 +33,7 @@ type mockJob struct {
 	stderr  io.OutputBuffer
 }
 
+// NewMockJob creates and returns a new mockJob.
 func NewMockJob(
 	owner string,
 	jobName string,
@@ -40,8 +42,10 @@ func NewMockJob(
 	arguments ...string,
 ) jobmanager.Job {
 	return &mockJob{
-		owner:  owner,
-		name:   jobName,
+		owner: owner,
+		name:  jobName,
+		// Normally I'd using random values in a unit test, but here I wanted
+		// this constructor to match the signature of the one for concreteJob.
 		id:     uuid.New(),
 		stdout: io.NewMemoryBuffer(),
 		stderr: io.NewMemoryBuffer(),
@@ -84,6 +88,7 @@ func (m *mockJob) Status() *jobmanager.JobStatus {
 	}
 
 	return &jobmanager.JobStatus{
+		Owner:    m.owner,
 		Name:     m.name,
 		Id:       m.id.String(),
 		Running:  m.running,

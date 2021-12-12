@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	// Superuser is the name of the user who can access any job.
 	Superuser = "administrator"
 )
 
@@ -40,11 +41,12 @@ type JobConstructor func(
 
 // Manager maintains the set of jobs and enforces the authorization policy
 type Manager struct {
-	mutex          sync.RWMutex
-	jobsByUser     map[string]map[string]Job // userId->jobId->job
-	allJobs        map[string]Job            // jobId->job
-	controllers    []cgroup.Controller
-	jobConstructor JobConstructor
+	mutex               sync.RWMutex
+	jobsByUserByJobId   map[string]map[string]Job // userId->jobId->job
+	jobsByUserByJobName map[string]map[string]Job // userId->jobName->job
+	allJobsByJobId      map[string]Job            // jobId->job
+	controllers         []cgroup.Controller
+	jobConstructor      JobConstructor
 }
 
 // NewManager creates and returns a new standard Manager.
@@ -69,10 +71,11 @@ func NewManager() *Manager {
 // running jobs.
 func NewManagerDetailed(jobConstructor JobConstructor, controllers []cgroup.Controller) *Manager {
 	return &Manager{
-		jobsByUser:     make(map[string]map[string]Job),
-		allJobs:        make(map[string]Job),
-		controllers:    controllers,
-		jobConstructor: jobConstructor,
+		jobsByUserByJobId:   make(map[string]map[string]Job),
+		jobsByUserByJobName: make(map[string]map[string]Job),
+		allJobsByJobId:      make(map[string]Job),
+		controllers:         controllers,
+		jobConstructor:      jobConstructor,
 	}
 }
 
@@ -83,14 +86,20 @@ func (m *Manager) Start(userId, jobName, programPath string, arguments []string)
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if _, exists := m.jobsByUser[userId]; !exists {
-		m.jobsByUser[userId] = make(map[string]Job)
+	if _, exists := m.jobsByUserByJobId[userId]; !exists {
+		m.jobsByUserByJobId[userId] = make(map[string]Job)
+		m.jobsByUserByJobName[userId] = make(map[string]Job)
+	}
+
+	if _, exists := m.jobsByUserByJobName[userId][jobName]; exists {
+		return nil, fmt.Errorf("job with name '%s' exists already", jobName)
 	}
 
 	job := m.jobConstructor(userId, jobName, m.controllers, programPath, arguments...)
 
-	m.jobsByUser[userId][job.Id().String()] = job
-	m.allJobs[job.Id().String()] = job
+	m.jobsByUserByJobId[userId][job.Id().String()] = job
+	m.jobsByUserByJobName[userId][jobName] = job
+	m.allJobsByJobId[job.Id().String()] = job
 
 	return job, job.Start()
 }
@@ -115,11 +124,11 @@ func (m *Manager) List(userId string) []*JobStatus {
 	var jobStatusList []*JobStatus
 
 	if userId == Superuser {
-		for _, job := range m.allJobs {
+		for _, job := range m.allJobsByJobId {
 			jobStatusList = append(jobStatusList, job.Status())
 		}
 	} else {
-		if l2map, exists := m.jobsByUser[userId]; exists {
+		if l2map, exists := m.jobsByUserByJobId[userId]; exists {
 			jobStatusList = make([]*JobStatus, 0, len(l2map))
 
 			for _, job := range l2map {
@@ -176,11 +185,11 @@ func (m *Manager) StderrStream(userId, jobId string) (*io.ByteStream, error) {
 // The caller must own the read lock associated with the given Manager.
 func (m *Manager) findJobByUser(userId, jobId string) (Job, error) {
 	if userId == Superuser {
-		if job, exists := m.allJobs[jobId]; exists {
+		if job, exists := m.allJobsByJobId[jobId]; exists {
 			return job, nil
 		}
 	} else {
-		if l2map, exists := m.jobsByUser[userId]; exists {
+		if l2map, exists := m.jobsByUserByJobId[userId]; exists {
 			if job, exists := l2map[jobId]; exists {
 				return job, nil
 			}

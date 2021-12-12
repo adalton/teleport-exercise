@@ -13,6 +13,8 @@ limitations under the License.
 
 package ostest
 
+// GetpidMock is a component that provides a mock implementation of the
+// os.Getpid() function.  The function returns the configured Pid.
 type GetpidMock struct {
 	Pid int
 }

@@ -68,6 +68,7 @@ type concreteJob struct {
 	runErrors     []error
 }
 
+// NewJob creates and returns a new concreteJob based on the given values.
 func NewJob(
 	owner string,
 	name string,
@@ -109,6 +110,7 @@ func NewJobDetailed(
 	}
 }
 
+// Start starts the job if it hasn't already been started.
 func (j *concreteJob) Start() error {
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
@@ -131,7 +133,9 @@ func (j *concreteJob) Start() error {
 	j.cmd.Stdout = j.stdoutBuffer
 	j.cmd.Stderr = j.stderrBuffer
 	j.cmd.Env = make([]string, 0) // Do not pass along our environment
+
 	//j.cmd.Dir = "/" // If we were to chroot
+
 	j.cmd.SysProcAttr = &syscall.SysProcAttr{
 		Chroot: "", // This would be non-empty to actually do a chroot
 		Cloneflags: syscall.CLONE_NEWPID |
@@ -172,6 +176,7 @@ func (j *concreteJob) Start() error {
 	return nil
 }
 
+// Stop kills the job.
 func (j *concreteJob) Stop() error {
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
@@ -188,16 +193,21 @@ func (j *concreteJob) Stop() error {
 	return nil
 }
 
+// StdoutStream returns a ByteStream associated with the standard output of the job.
 func (j *concreteJob) StdoutStream() *io.ByteStream {
 	// Unlocked read of j.stdoutBuffer should be ok since it's not modified once created
 	return io.NewByteStream(j.stdoutBuffer)
 }
 
+// StderrStream returns a ByteStream associated with the standard error of the job.
 func (j *concreteJob) StderrStream() *io.ByteStream {
 	// Unlocked read of j.stderrBuffer should be ok since it's not modified once created
 	return io.NewByteStream(j.stderrBuffer)
 }
 
+// Status returns the current status of this job.  If the job is running,
+// the information will include the job's PID.  If the job has terminated,
+// the information will include the exit code and termination signal (if any).
 func (j *concreteJob) Status() *JobStatus {
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
@@ -228,10 +238,12 @@ func (j *concreteJob) Status() *JobStatus {
 	return status
 }
 
+// Id returns the server-assigned ID of this job.
 func (j *concreteJob) Id() uuid.UUID {
 	return j.id
 }
 
+// Name returns the user-assigned name of this job.
 func (j *concreteJob) Name() string {
 	return j.name
 }

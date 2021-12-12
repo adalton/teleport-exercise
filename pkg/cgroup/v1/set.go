@@ -28,6 +28,8 @@ const (
 	defaultDirectoryPerms os.FileMode = 0755
 )
 
+// Set maintains a collection of 0 or more cgroup controllers that should be
+// created/removed at the same time.
 type Set struct {
 	osAdapter   *os.Adapter
 	basePath    string
@@ -122,6 +124,8 @@ func (s *Set) Destroy() error {
 	return nil
 }
 
+// TaskFiles returns a list of the 'tasks' files for each cgroup controller
+// in this set.
 func (s *Set) TaskFiles() []string {
 	if s == nil {
 		return nil

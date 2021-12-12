@@ -20,6 +20,9 @@ type MkdirAllRecord struct {
 	Perm os.FileMode
 }
 
+// MkdirAllMock is a component that provides a mock implementation of the
+// os.MkdirAll() function.  The implementation records the paramters received
+// and returns the configured NextError.
 type MkdirAllMock struct {
 	Events    []*MkdirAllRecord
 	NextError error

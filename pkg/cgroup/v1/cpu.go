@@ -41,6 +41,7 @@ type cpu struct {
 	cpus *float64
 }
 
+// NewCpuController creates and returns a new cpu cgroup controller.
 func NewCpuController() *cpu {
 	return NewCpuControllerDetailed(nil)
 }
@@ -51,6 +52,7 @@ func NewCpuControllerDetailed(osAdapter *os.Adapter) *cpu {
 	}
 }
 
+// SetCpus sets the CPU limit in terms of number of CPUs.
 func (c *cpu) SetCpus(value float64) *cpu {
 	c.cpus = &value
 

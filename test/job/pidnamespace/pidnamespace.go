@@ -36,12 +36,8 @@ func runTest() {
 }
 
 // Sample run:
-//     $ sudo go run networknamespace.go
-//     Running test to list all network interfaces avaialble to a job
-//     1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default qlen 1000
-//         link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-//     2: sit0@NONE: <NOARP> mtu 1480 qdisc noop state DOWN mode DEFAULT group default qlen 1000
-//         link/sit 0.0.0.0 brd 0.0.0.0
+//     Determining the job's PID in its namespace
+//     uid=0(root) gid=0(root) groups=0(root)
 
 func main() {
 	fmt.Println("Determining the job's PID in its namespace")

@@ -35,7 +35,7 @@ func Test_Set_Create_Success(t *testing.T) {
 		RemoveFn:   removeRecorder.Remove,
 	}
 
-	controller := &cgrouptest.DummyController{ControllerName: "nil"}
+	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
 	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
 
 	err := set.Create()
@@ -63,7 +63,7 @@ func Test_Set_Create_Failure(t *testing.T) {
 	}
 
 	expectedError := fmt.Errorf("injected error")
-	controller := &cgrouptest.DummyController{
+	controller := &cgrouptest.ControllerMock{
 		ControllerName:   "nil",
 		ApplyReturnValue: expectedError,
 	}
@@ -90,7 +90,7 @@ func Test_Set_Destroy_Success(t *testing.T) {
 		RemoveFn: removeRecorder.Remove,
 	}
 
-	controller := &cgrouptest.DummyController{ControllerName: "nil"}
+	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
 	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
 
 	err := set.Destroy()
@@ -117,7 +117,7 @@ func Test_Set_Destroy_Failure(t *testing.T) {
 		RemoveFn: removeRecorder.Remove,
 	}
 
-	controller := &cgrouptest.DummyController{ControllerName: "nil"}
+	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
 	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
 
 	err := set.Destroy()
@@ -129,7 +129,7 @@ func Test_Set_Destroy_Failure(t *testing.T) {
 func Test_Set_TaskFiles(t *testing.T) {
 	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 
-	controller := &cgrouptest.DummyController{ControllerName: "nil"}
+	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
 	set := cgroup.NewSet(jobId, controller)
 
 	taskFiles := set.TaskFiles()
