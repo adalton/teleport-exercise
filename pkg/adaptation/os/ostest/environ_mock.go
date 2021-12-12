@@ -13,10 +13,10 @@ limitations under the License.
 
 package ostest
 
-type EnvironGenerator struct {
+type EnvironMock struct {
 	Environment []string
 }
 
-func (e *EnvironGenerator) Environ() []string {
+func (e *EnvironMock) Environ() []string {
 	return e.Environment
 }

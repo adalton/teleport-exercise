@@ -11,15 +11,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cgroup
+package ostest
 
-// Controller defines the interface to a cgroup controller -- objects that
-// model concrete cgroup controlers and their configuration options.
-type Controller interface {
-	// Name returns the name of the cgroup
-	Name() string
+import "github.com/adalton/teleport-exercise/pkg/adaptation/os"
 
-	// Apply applies this controller's configuration to the cgroup at the
-	// given path.
-	Apply(path string) error
+type MkdirAllRecord struct {
+	Path string
+	Perm os.FileMode
+}
+
+type MkdirAllMock struct {
+	Events    []*MkdirAllRecord
+	NextError error
+}
+
+func (w *MkdirAllMock) MkdirAll(path string, perm os.FileMode) error {
+	w.Events = append(w.Events, &MkdirAllRecord{
+		Path: path,
+		Perm: perm,
+	})
+
+	return w.NextError
 }

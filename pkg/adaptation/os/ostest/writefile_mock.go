@@ -15,8 +15,23 @@ package ostest
 
 import "github.com/adalton/teleport-exercise/pkg/adaptation/os"
 
-type NilFileWriter struct{}
+type WriteFileRecord struct {
+	Name string
+	Data []byte
+	Perm os.FileMode
+}
 
-func (w *NilFileWriter) WriteFile(string, []byte, os.FileMode) error {
-	return nil
+type WriteFileMock struct {
+	Events    []*WriteFileRecord
+	NextError error
+}
+
+func (w *WriteFileMock) WriteFile(name string, data []byte, perm os.FileMode) error {
+	w.Events = append(w.Events, &WriteFileRecord{
+		Name: name,
+		Data: data,
+		Perm: perm,
+	})
+
+	return w.NextError
 }

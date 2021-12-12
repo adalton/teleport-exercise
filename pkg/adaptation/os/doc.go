@@ -11,16 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ostest
-
-type PidGenerator struct {
-	Pid int
-}
-
-func (p *PidGenerator) Getpid() int {
-	if p.Pid == 0 {
-		return 1
-	}
-
-	return p.Pid
-}
+// Package os provides provides an abstraction over the standard
+// library os package to enable unit testing of code that uses
+// those APIs.
+package os

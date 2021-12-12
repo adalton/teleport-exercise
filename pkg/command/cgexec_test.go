@@ -27,8 +27,8 @@ import (
 )
 
 func Test_Cgexec_WriteCgroupFiles_Success(t *testing.T) {
-	writeFileRecorder := &ostest.WriteFileRecorder{}
-	pidGenerator := &ostest.PidGenerator{
+	writeFileRecorder := &ostest.WriteFileMock{}
+	pidGenerator := &ostest.GetpidMock{
 		Pid: 1234,
 	}
 	osa := &os.Adapter{
@@ -37,7 +37,7 @@ func Test_Cgexec_WriteCgroupFiles_Success(t *testing.T) {
 	}
 
 	sc := &syscall.Adapter{
-		ExecFn: (&syscalltest.ExecRecorder{}).Exec,
+		ExecFn: (&syscalltest.ExecMock{}).Exec,
 	}
 
 	cgfile := "/sys/fs/cgroup/cpu/job/1e71d42d-b7e2-4f1c-893f-b16415b96e1a/tasks"
@@ -58,16 +58,16 @@ func Test_Cgexec_WriteCgroupFiles_Success(t *testing.T) {
 
 func Test_Cgexec_WriteCgroupFiles_Failure(t *testing.T) {
 	expectedError := fmt.Errorf("injected error")
-	writeFileRecorder := &ostest.WriteFileRecorder{
+	writeFileRecorder := &ostest.WriteFileMock{
 		NextError: expectedError,
 	}
 	osa := &os.Adapter{
 		WriteFileFn: writeFileRecorder.WriteFile,
-		GetpidFn:    (&ostest.PidGenerator{}).Getpid,
+		GetpidFn:    (&ostest.GetpidMock{}).Getpid,
 	}
 
 	sc := &syscall.Adapter{
-		ExecFn: (&syscalltest.ExecRecorder{}).Exec,
+		ExecFn: (&syscalltest.ExecMock{}).Exec,
 	}
 
 	cgfile := "/sys/fs/cgroup/cpu/job/1e71d42d-b7e2-4f1c-893f-b16415b96e1a/tasks"
@@ -86,17 +86,17 @@ func Test_Cgexec_WriteCgroupFiles_Failure(t *testing.T) {
 
 func Test_Cgexec_Exec(t *testing.T) {
 	env := []string{"x=y"}
-	envGen := &ostest.EnvironGenerator{
+	envGen := &ostest.EnvironMock{
 		Environment: env,
 	}
 
 	osa := &os.Adapter{
-		WriteFileFn: (&ostest.NilFileWriter{}).WriteFile,
-		GetpidFn:    (&ostest.PidGenerator{}).Getpid,
+		WriteFileFn: (&ostest.WriteFileMock{}).WriteFile,
+		GetpidFn:    (&ostest.GetpidMock{}).Getpid,
 		EnvironFn:   envGen.Environ,
 	}
 
-	execRecorder := &syscalltest.ExecRecorder{}
+	execRecorder := &syscalltest.ExecMock{}
 	sc := &syscall.Adapter{
 		ExecFn: execRecorder.Exec,
 	}

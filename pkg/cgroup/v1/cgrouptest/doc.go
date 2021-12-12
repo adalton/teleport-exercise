@@ -11,15 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cgroup
-
-// Controller defines the interface to a cgroup controller -- objects that
-// model concrete cgroup controlers and their configuration options.
-type Controller interface {
-	// Name returns the name of the cgroup
-	Name() string
-
-	// Apply applies this controller's configuration to the cgroup at the
-	// given path.
-	Apply(path string) error
-}
+// Package cgrouptest provides a collection of components to help with
+// unit testing clients of the cgroup/v1 package.
+package cgrouptest

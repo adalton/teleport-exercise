@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/adalton/teleport-exercise/pkg/cgroup/v1"
+	"github.com/adalton/teleport-exercise/pkg/config"
 	"github.com/adalton/teleport-exercise/pkg/io"
 )
 
@@ -25,13 +26,19 @@ const (
 	Superuser = "administrator"
 )
 
+// JobConstructor is a type that models a function for creating Jobs.
+// This enables us to have a "real" job constructor function as well as
+// constructor functions for mock job implementations that share the same
+// signature.
 type JobConstructor func(
+	owner string,
 	jobName string,
 	controllers []cgroup.Controller,
 	programPath string,
 	arguments ...string,
 ) Job
 
+// Manager maintains the set of jobs and enforces the authorization policy
 type Manager struct {
 	mutex          sync.RWMutex
 	jobsByUser     map[string]map[string]Job // userId->jobId->job
@@ -40,23 +47,26 @@ type Manager struct {
 	jobConstructor JobConstructor
 }
 
+// NewManager creates and returns a new standard Manager.
 func NewManager() *Manager {
-	// TODO:
-	readLimit := fmt.Sprintf("8:16 %d", 1024*1024*20)
-	writeLimit := fmt.Sprintf("8:16 %d", 1024*1024*40)
-
 	controllers := []cgroup.Controller{
-		cgroup.NewCpuController().SetCpus(0.5),
-		cgroup.NewMemoryController().SetLimit("2M"),
+		cgroup.NewCpuController().SetCpus(config.CgroupDefaultCpuLimit),
+		cgroup.NewMemoryController().SetLimit(config.CgroupDefaultMemoryLimit),
 		cgroup.NewBlockIoController().
-			SetReadBpsDevice(readLimit).
-			SetWriteBpsDevice(writeLimit),
+			SetReadBpsDevice(config.CgroupDefaultBlkioReadLimit).
+			SetWriteBpsDevice(config.CgroupDefaultBlkioWriteLimit),
 	}
 
 	return NewManagerDetailed(NewJob, controllers)
 
 }
 
+// NewManagerDetailed returns a new Manger with the given values.
+// The jobConstructor is a function for creating new jobs.  In production
+// this will point to NewJob.  For unit tests, this might point to a
+// constructor function for a mock type.
+// The given controllers is the list of cgroup controllers to manage while
+// running jobs.
 func NewManagerDetailed(jobConstructor JobConstructor, controllers []cgroup.Controller) *Manager {
 	return &Manager{
 		jobsByUser:     make(map[string]map[string]Job),
@@ -66,6 +76,9 @@ func NewManagerDetailed(jobConstructor JobConstructor, controllers []cgroup.Cont
 	}
 }
 
+// Start starts a new job with the given JobName for the given userId.
+// The programPath and arguments are the program the user wants to run and
+// the arguments to that program.
 func (m *Manager) Start(userId, jobName, programPath string, arguments []string) (Job, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -74,7 +87,7 @@ func (m *Manager) Start(userId, jobName, programPath string, arguments []string)
 		m.jobsByUser[userId] = make(map[string]Job)
 	}
 
-	job := m.jobConstructor(jobName, m.controllers, programPath, arguments...)
+	job := m.jobConstructor(userId, jobName, m.controllers, programPath, arguments...)
 
 	m.jobsByUser[userId][job.Id().String()] = job
 	m.allJobs[job.Id().String()] = job
@@ -82,6 +95,7 @@ func (m *Manager) Start(userId, jobName, programPath string, arguments []string)
 	return job, job.Start()
 }
 
+// Stop stops an existing job with the given jobId for the given userId.
 func (m *Manager) Stop(userId, jobId string) error {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
@@ -93,6 +107,7 @@ func (m *Manager) Stop(userId, jobId string) error {
 	}
 }
 
+// List returns a list of the jobs owned by the given userId.
 func (m *Manager) List(userId string) []*JobStatus {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
@@ -116,6 +131,8 @@ func (m *Manager) List(userId string) []*JobStatus {
 	return jobStatusList
 }
 
+// Status returns the status of the job with the given JobId owned by
+// the given userId.
 func (m *Manager) Status(userId, jobId string) (*JobStatus, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
@@ -127,6 +144,8 @@ func (m *Manager) Status(userId, jobId string) (*JobStatus, error) {
 	}
 }
 
+// StdoutStream returns an io.ByteStream for reading the standard output generated
+// by the job with the given jobId own by the given userId.
 func (m *Manager) StdoutStream(userId, jobId string) (*io.ByteStream, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
@@ -139,6 +158,8 @@ func (m *Manager) StdoutStream(userId, jobId string) (*io.ByteStream, error) {
 
 }
 
+// Stderr returns an io.ByteStream for reading the standard error generated
+// by the job with the given jobId own by the given userId.
 func (m *Manager) StderrStream(userId, jobId string) (*io.ByteStream, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
@@ -150,6 +171,9 @@ func (m *Manager) StderrStream(userId, jobId string) (*io.ByteStream, error) {
 	}
 }
 
+// findJobByUser finds a the job with the given jobId that is owned by
+// the given userId.  If no such job is found, it returns an error.
+// The caller must own the read lock associated with the given Manager.
 func (m *Manager) findJobByUser(userId, jobId string) (Job, error) {
 	if userId == Superuser {
 		if job, exists := m.allJobs[jobId]; exists {

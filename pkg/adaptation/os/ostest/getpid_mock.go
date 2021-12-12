@@ -11,15 +11,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cgroup
+package ostest
 
-// Controller defines the interface to a cgroup controller -- objects that
-// model concrete cgroup controlers and their configuration options.
-type Controller interface {
-	// Name returns the name of the cgroup
-	Name() string
+type GetpidMock struct {
+	Pid int
+}
 
-	// Apply applies this controller's configuration to the cgroup at the
-	// given path.
-	Apply(path string) error
+func (p *GetpidMock) Getpid() int {
+	if p.Pid == 0 {
+		return 1
+	}
+
+	return p.Pid
 }

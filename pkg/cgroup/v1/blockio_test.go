@@ -26,7 +26,7 @@ import (
 
 func Test_blkio_Apply(t *testing.T) {
 	path := "/sys/fs/cgroup/jobs/889f7cc2-9935-4773-aaa1-b94478abc923"
-	writeRecorder := ostest.WriteFileRecorder{}
+	writeRecorder := ostest.WriteFileMock{}
 	adapter := &os.Adapter{
 		WriteFileFn: writeRecorder.WriteFile,
 	}

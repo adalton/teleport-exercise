@@ -24,6 +24,7 @@ import (
 )
 
 type mockJob struct {
+	owner   string
 	name    string
 	id      uuid.UUID
 	running bool
@@ -32,11 +33,14 @@ type mockJob struct {
 }
 
 func NewMockJob(
-	jobName string, controllers []cgroup.Controller,
+	owner string,
+	jobName string,
+	controllers []cgroup.Controller,
 	programPath string,
 	arguments ...string,
 ) jobmanager.Job {
 	return &mockJob{
+		owner:  owner,
 		name:   jobName,
 		id:     uuid.New(),
 		stdout: io.NewMemoryBuffer(),
@@ -90,4 +94,8 @@ func (m *mockJob) Status() *jobmanager.JobStatus {
 
 func (m *mockJob) Id() uuid.UUID {
 	return m.id
+}
+
+func (m *mockJob) Name() string {
+	return m.name
 }

@@ -11,27 +11,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package syscalltest
+package ostest
 
-import "fmt"
-
-type ExecRecorder struct {
-	Argv0 string
-	Argv  []string
-	Envv  []string
-	Error error
+type RemoveRecord struct {
+	Path string
 }
 
-func (n *ExecRecorder) Exec(argv0 string, argv []string, envv []string) (err error) {
-	n.Argv0 = argv0
-	n.Argv = argv
-	n.Envv = envv
+type RemoveMock struct {
+	Events    []*RemoveRecord
+	NextError error
+}
 
-	err = n.Error
-	if err == nil {
-		// Exec must never return a non-error value
-		err = fmt.Errorf("nilexec: exec failed")
-	}
+func (w *RemoveMock) Remove(path string) error {
+	w.Events = append(w.Events, &RemoveRecord{
+		Path: path,
+	})
 
-	return err
+	return w.NextError
 }
