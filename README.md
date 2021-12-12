@@ -55,3 +55,6 @@ non-privileged user.
 
 * test/job/networknamespace/networknamespace.go
   A test to illustrate that the job is running in its own network namespace
+
+* test/job/concurrentreads/concurrentreads.go
+  A test to illustrate that a single job can have multiple concurrent readers
