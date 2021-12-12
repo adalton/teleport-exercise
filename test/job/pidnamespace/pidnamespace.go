@@ -22,7 +22,9 @@ import (
 func runTest() {
 
 	job := jobmanager.NewJob("theOwner", "my-test", nil,
-		"/usr/bin/id",
+		"/bin/bash",
+		"-c",
+		"echo $$",
 	)
 
 	if err := job.Start(); err != nil {
@@ -37,7 +39,7 @@ func runTest() {
 
 // Sample run:
 //     Determining the job's PID in its namespace
-//     uid=0(root) gid=0(root) groups=0(root)
+//     1
 
 func main() {
 	fmt.Println("Determining the job's PID in its namespace")
