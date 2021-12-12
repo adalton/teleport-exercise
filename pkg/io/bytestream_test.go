@@ -84,26 +84,3 @@ func Test_ByteStream_MultipleReaders(t *testing.T) {
 	assert.Nil(t, <-stream1)
 	assert.Nil(t, <-stream2)
 }
-
-/*
-
-func Test_ByteStream_Stream(t *testing.T) {
-	buffer := io.NewMemoryBuffer()
-	stream := io.NewByteStream(buffer)
-
-	var wg sync.WaitGroup
-
-	for i := 0; i < 20; i++ {
-		wg.Add(1)
-		go func() {
-			for j := 0; j < 100; j++ {
-				stream.Stream()
-			}
-			wg.Done()
-		}()
-	}
-
-	wg.Wait()
-}
-
-*/
