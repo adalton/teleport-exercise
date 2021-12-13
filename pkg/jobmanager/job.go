@@ -38,19 +38,6 @@ type JobStatus struct {
 	RunError  error
 }
 
-// Job defines an interface for objects that behave like jobs.  This enables
-// us to define both a production job type as well a a job type for unit
-// testing.
-type Job interface {
-	Start() error
-	Stop() error
-	Status() *JobStatus
-	StdoutStream() *io.ByteStream
-	StderrStream() *io.ByteStream
-	Name() string
-	Id() uuid.UUID
-}
-
 // concreteJob implements the Job interface and provides the production implementation
 // of concreteJob behavior.
 type concreteJob struct {
