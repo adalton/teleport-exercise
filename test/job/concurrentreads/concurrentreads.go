@@ -25,7 +25,7 @@ func runTest() {
 	job := jobmanager.NewJob("theOwner", "my-test", nil,
 		"/bin/bash",
 		"-c",
-		"for ((i = 0; i < 10000; ++i)); do echo $RANDOM; done",
+		"for ((i = 0; i < 100; ++i)); do for((j = 0; j < 1000; ++j)); do echo $RANDOM; done; sleep 0.25; done",
 	)
 
 	if err := job.Start(); err != nil {
@@ -36,14 +36,17 @@ func runTest() {
 	wg.Add(100)
 
 	for i := 0; i < 100; i++ {
-		go func() {
+		go func(threadNum int) {
 			count := 0
 			for output := range job.StdoutStream().Stream() {
 				count += len(output)
+				if threadNum == 0 {
+					fmt.Print(string(output))
+				}
 			}
-			fmt.Printf("%d\n", count)
+			fmt.Printf("%d: %d\n", threadNum, count)
 			wg.Done()
-		}()
+		}(i)
 	}
 
 	wg.Wait()

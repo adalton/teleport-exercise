@@ -40,21 +40,21 @@ for unit testing.  I currently run this via `sudo`, but I plan to look into
 setting up a cgroup configuration that would enable these to work as a
 non-privileged user.
 
-* test/job/blkiolimit/blkiolimit.go
+* test/job/blkiolimit/blkiolimit.go (build/test-blkiolimit)
   A test to illustrate that the blockio cgroup limit controls the job output.
   This could be extended to also check input limits.
 
-* test/job/memorylimit/memorylimit.go
+* test/job/memorylimit/memorylimit.go (build/test-memorylimit)
   A test to illustrate that the memory cgroup limit controls the job output.
 
-* test/job/cpulimit/cpulimit.go
+* test/job/cpulimit/cpulimit.go (build/test-cpulimit)
   A test to illustrate that the cpu cgroup limit controls the job output.
 
-* test/job/pidnamespace/pidnamespace.go
+* test/job/pidnamespace/pidnamespace.go (build/test-pidnamespace)
   A test to illustrate that the job is running in its own pid namespace
 
-* test/job/networknamespace/networknamespace.go
+* test/job/networknamespace/networknamespace.go (build/test-networknamespace)
   A test to illustrate that the job is running in its own network namespace
 
-* test/job/concurrentreads/concurrentreads.go
+* test/job/concurrentreads/concurrentreads.go (build/test-concurrentreads)
   A test to illustrate that a single job can have multiple concurrent readers
