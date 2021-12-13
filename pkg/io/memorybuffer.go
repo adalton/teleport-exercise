@@ -108,8 +108,8 @@ func (b *MemoryBuffer) Size() int64 {
 
 // Closed returns true if this MemoryBuffer has been closed, false otherwise.
 func (b *MemoryBuffer) Closed() bool {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+	b.mutex.RLock()
+	defer b.mutex.RUnlock()
 
 	return b.closed
 }
