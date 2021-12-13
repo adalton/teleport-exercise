@@ -91,7 +91,6 @@ func (s *Set) Create() (retErr error) {
 		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobId.String())
 
 		if err := s.osAdapter.Remove(path); err != nil {
-			_ = err
 			log.Printf("Failed to backout cgroup %s: %v", s.controllers[i].Name(), err)
 			// Intentionally not returning an error here
 		}
