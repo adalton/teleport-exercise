@@ -123,11 +123,11 @@ func (m *Manager) Stop(userID, jobID string) error {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userID, jobID); err != nil {
+	job, err := m.findJobByUser(userID, jobID)
+	if err != nil {
 		return err
-	} else {
-		return job.Stop()
 	}
+	return job.Stop()
 }
 
 // List returns a list of the jobs owned by the given userID.
@@ -160,11 +160,11 @@ func (m *Manager) Status(userID, jobID string) (*JobStatus, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userID, jobID); err != nil {
+	job, err := m.findJobByUser(userID, jobID)
+	if err != nil {
 		return nil, err
-	} else {
-		return job.Status(), nil
 	}
+	return job.Status(), nil
 }
 
 // StdoutStream returns an io.ByteStream for reading the standard output generated
@@ -173,11 +173,11 @@ func (m *Manager) StdoutStream(userID, jobID string) (*io.ByteStream, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userID, jobID); err != nil {
+	job, err := m.findJobByUser(userID, jobID)
+	if err != nil {
 		return nil, err
-	} else {
-		return job.StdoutStream(), nil
 	}
+	return job.StdoutStream(), nil
 
 }
 
@@ -187,11 +187,11 @@ func (m *Manager) StderrStream(userID, jobID string) (*io.ByteStream, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userID, jobID); err != nil {
+	job, err := m.findJobByUser(userID, jobID)
+	if err != nil {
 		return nil, err
-	} else {
-		return job.StderrStream(), nil
 	}
+	return job.StderrStream(), nil
 }
 
 // findJobByUser finds a the job with the given jobID that is owned by
