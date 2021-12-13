@@ -56,15 +56,15 @@ func CgexecDetailed(args []string, osa *os.Adapter, sa *syscall.Adapter) error {
 		commandList = args[1:]
 	}
 
+	if len(commandList) == 0 {
+		return fmt.Errorf("cgexec: no command provided")
+	}
+
 	pid := fmt.Sprintf("%d", osa.Getpid())
 	for _, taskFile := range taskFileList {
 		if err := osa.WriteFile(taskFile, []byte(pid), DefaultPerms); err != nil {
 			return err
 		}
-	}
-
-	if len(commandList) == 0 {
-		return fmt.Errorf("cgexec: no command provided")
 	}
 
 	if err := sa.Exec(commandList[0], commandList, osa.Environ()); err != nil {
