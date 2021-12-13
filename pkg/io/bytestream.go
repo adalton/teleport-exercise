@@ -75,13 +75,13 @@ func (b *ByteStream) Stream() <-chan []byte {
 		readBuffer := make([]byte, b.maxReadSize)
 
 		for {
-			bufferSize, _ := b.buffer.waitForChange(nextByte)
+			bufferSize, closed := b.buffer.waitForChange(nextByte)
 
 			// At this point the underlying buffer could be closed, there could
 			// be new bytes in the buffer to process, or both.
 
-			if bufferSize == nextByte {
-				// No new bytes to process; the buffer must be closed and this
+			if bufferSize == nextByte && closed {
+				// No new bytes to process and the buffer is closed.  This
 				// streamer must have consumed all the bytes that were written
 				// to the buffer. Terminate the goroutine.
 				close(b.channel)
