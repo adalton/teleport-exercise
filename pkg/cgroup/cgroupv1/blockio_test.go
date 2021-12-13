@@ -34,7 +34,7 @@ func Test_blkio_Apply(t *testing.T) {
 	readBps := "1:2 1G"
 	writeBps := "1:3 900M"
 
-	blkio := cgroupv1.NewBlockIoControllerDetailed(adapter).
+	blkio := cgroupv1.NewBlockIOControllerDetailed(adapter).
 		SetReadBpsDevice(readBps).
 		SetWriteBpsDevice(writeBps)
 

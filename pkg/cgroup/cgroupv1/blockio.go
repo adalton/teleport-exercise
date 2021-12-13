@@ -20,29 +20,29 @@ const (
 	BlkioThrottleWriteBpsDevice = "blkio.throttle.write_bps_device"
 )
 
-// blockIo implements the BlockIO cgroup controller
-type blockIo struct {
+// blockIO implements the BlockIO cgroup controller
+type blockIO struct {
 	base
 	// TODO: It might be helpful to enable these to be lists so that a single
-	// blocIo object can handle multiple devices
+	// blocIO object can handle multiple devices
 	readBpsDevice  *string
 	writeBpsDevice *string
 }
 
-// NewBlockIoController creates and returns a new blockIo cgroup controller
-func NewBlockIoController() *blockIo {
-	return NewBlockIoControllerDetailed(nil)
+// NewBlockIOController creates and returns a new blockIO cgroup controller
+func NewBlockIOController() *blockIO {
+	return NewBlockIOControllerDetailed(nil)
 }
 
-func NewBlockIoControllerDetailed(osAdapter *os.Adapter) *blockIo {
-	return &blockIo{
+func NewBlockIOControllerDetailed(osAdapter *os.Adapter) *blockIO {
+	return &blockIO{
 		base: newBase("blkio", osAdapter),
 	}
 }
 
 // Apply applies this cgroup controller configuration to the blkio cgroup
 // at the given path.
-func (b *blockIo) Apply(path string) error {
+func (b *blockIO) Apply(path string) error {
 	if b.readBpsDevice != nil {
 		if err := b.write([]byte(*b.readBpsDevice), "%s/%s", path, BlkioThrottleReadBpsDevice); err != nil {
 			return err
@@ -59,14 +59,14 @@ func (b *blockIo) Apply(path string) error {
 }
 
 // SetReadBpsDevice Sets the read bytes per second limit for a device.
-func (b *blockIo) SetReadBpsDevice(value string) *blockIo {
+func (b *blockIO) SetReadBpsDevice(value string) *blockIO {
 	b.readBpsDevice = &value
 
 	return b
 }
 
 // SetWriteBpsDevice Sets the write bytes per second limit for a device.
-func (b *blockIo) SetWriteBpsDevice(value string) *blockIo {
+func (b *blockIO) SetWriteBpsDevice(value string) *blockIO {
 	b.writeBpsDevice = &value
 
 	return b

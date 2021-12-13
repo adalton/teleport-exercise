@@ -68,7 +68,7 @@ func NewManager() *Manager {
 	controllers := []cgroupv1.Controller{
 		cgroupv1.NewCpuController().SetCpus(config.CgroupDefaultCpuLimit),
 		cgroupv1.NewMemoryController().SetLimit(config.CgroupDefaultMemoryLimit),
-		cgroupv1.NewBlockIoController().
+		cgroupv1.NewBlockIOController().
 			SetReadBpsDevice(config.CgroupDefaultBlkioReadLimit).
 			SetWriteBpsDevice(config.CgroupDefaultBlkioWriteLimit),
 	}
