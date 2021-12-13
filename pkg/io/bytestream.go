@@ -82,7 +82,7 @@ func (b *ByteStream) Stream() <-chan []byte {
 					close(b.channel)
 					return
 				} else if n > 0 {
-					// Craete a copy here because we're reusing readBuffer here.
+					// Create a copy here because we're reusing readBuffer here.
 					bufToWrite := make([]byte, n)
 					copy(bufToWrite, readBuffer[0:n])
 
