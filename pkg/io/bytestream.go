@@ -24,9 +24,10 @@ const DefaultMaxBufferSize = 1024
 
 // ByteStream enables clients to stream bytes from an OutputBuffer.
 type ByteStream struct {
-	buffer      OutputBuffer
-	channel     chan []byte
-	maxReadSize int
+	startGoroutine sync.Once
+	buffer         OutputBuffer
+	channel        chan []byte
+	maxReadSize    int
 
 	// mutex guards the fields that follow
 	mutex            sync.Mutex
@@ -52,64 +53,54 @@ func NewByteStreamDetailed(buffer OutputBuffer, maxReadSize int) *ByteStream {
 // Stream returns a chanel that streams the content of the underlying OutputBuffer.
 func (b *ByteStream) Stream() <-chan []byte {
 
-	bailEarly := true
+	b.startGoroutine.Do(func() {
+		go func() {
+			var nextByte int64
+			readBuffer := make([]byte, b.maxReadSize)
 
-	func() {
-		b.mutex.Lock()
-		defer b.mutex.Unlock()
+			for {
+				bufferSize, closed := b.buffer.waitForChange(nextByte)
 
-		if !b.goroutineStarted {
-			bailEarly = false
-			b.goroutineStarted = true
-		}
-	}()
+				// At this point the underlying buffer could be closed, there could
+				// be new bytes in the buffer to process, or both.
 
-	// If some other call to Stream has already created the goroutine, then
-	// there's nothing for this call to do other than to return the channel.
-	if bailEarly {
-		return b.channel
-	}
+				if bufferSize == nextByte && closed {
+					// No new bytes to process and the buffer is closed.  This
+					// streamer must have consumed all the bytes that were written
+					// to the buffer. Terminate the goroutine.
+					close(b.channel)
+					return
+				}
 
-	go func() {
-		var nextByte int64
-		readBuffer := make([]byte, b.maxReadSize)
+				if n, err := b.buffer.ReadAt(readBuffer, nextByte); err != nil {
+					// If ReadAt fails, we'l assume the buffer is in a bad state
+					// and that future reads would also fail.
+					//
+					// One way in which this could happen if nextByte is greater
+					// than the size of the buffer.  That should never happen.
+					// It might be worth panicing here --- at least during
+					// internal testing --- to catch this error if it happens.
 
-		for {
-			bufferSize, closed := b.buffer.waitForChange(nextByte)
+					log.Printf("Unexpected failure reading from underlying buffer: %v", err)
 
-			// At this point the underlying buffer could be closed, there could
-			// be new bytes in the buffer to process, or both.
+					close(b.channel)
+					return
+				} else if n > 0 {
+					// Craete a copy here because we're reusing readBuffer here.
+					bufToWrite := make([]byte, n)
+					copy(bufToWrite, readBuffer[0:n])
 
-			if bufferSize == nextByte && closed {
-				// No new bytes to process and the buffer is closed.  This
-				// streamer must have consumed all the bytes that were written
-				// to the buffer. Terminate the goroutine.
-				close(b.channel)
-				return
+					b.channel <- bufToWrite
+					nextByte += int64(n)
+				}
+
+				// If n == 0, then it's possible that new bytes were written to the
+				// buffer since we inspected its size above.  In that case, we'll
+				// get the updated size and reevaluate on the next iteration.
 			}
+		}()
 
-			if n, err := b.buffer.ReadAt(readBuffer, nextByte); err != nil {
-				// If ReadAt fails, we'l assume the buffer is in a bad state
-				// and that future reads would also fail.
-
-				log.Printf("Unexpected failure reading from underlying buffer: %v", err)
-
-				close(b.channel)
-				return
-			} else if n > 0 {
-				// Craete a copy here because we're reusing readBuffer here.
-				bufToWrite := make([]byte, n)
-				copy(bufToWrite, readBuffer[0:n])
-
-				b.channel <- bufToWrite
-				nextByte += int64(n)
-			}
-
-			// If n == 0, then it's possible that new bytes were written to the
-			// buffer since we inspected its size above.  In that case, we'll
-			// get the updated size and reevaluate on the next iteration.
-		}
-	}()
+	})
 
 	return b.channel
 }
