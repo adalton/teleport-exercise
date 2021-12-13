@@ -31,7 +31,7 @@ eventually move the build process into a docker container.
 
 You can run the unit tests with `make test`.
 
-You can build the `egexec` binary using `make cgexec`.  The resulting binary
+You can build the `cgexec` binary using `make cgexec`.  The resulting binary
 will be stored in `build/cgexec`  The tests current expect that binary to
 be available in the `/tmp` directory; you'll have to copy it there manually.
 
