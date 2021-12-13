@@ -96,19 +96,6 @@ func Test_MemoryBuffer_ReadAt_FromEnd(t *testing.T) {
 	assert.Equal(t, []byte("xyz"), result[0:bytesRead])
 }
 
-func Test_MemoryBuffer_ReadAt_OffEnd(t *testing.T) {
-	b := io.NewMemoryBuffer()
-	result := make([]byte, 10)
-
-	b.Write([]byte("abcdefghijklmnopqrstuvwxyz"))
-
-	bytesRead, err := b.ReadAt(result, 26-3)
-
-	assert.Nil(t, err)
-	assert.Equal(t, 3, bytesRead)
-	assert.Equal(t, []byte("xyz"), result[0:bytesRead])
-}
-
 func Test_MemoryBuffer_ReadAt_All(t *testing.T) {
 	b := io.NewMemoryBuffer()
 	content := []byte("abcdefghijklmnopqrstuvwxyz")
