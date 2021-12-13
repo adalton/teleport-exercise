@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/adalton/teleport-exercise/pkg/cgroup/v1"
+	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 )
 
-func runTest(controllers ...cgroup.Controller) {
+func runTest(controllers ...cgroupv1.Controller) {
 
 	job := jobmanager.NewJob("theOwner", "my-test", controllers,
 		"/usr/bin/stress-ng",
@@ -193,5 +193,5 @@ func main() {
 	runTest()
 
 	fmt.Println("Running Memory test with cgroup constraints at 2M")
-	runTest(cgroup.NewMemoryController().SetLimit("2M"))
+	runTest(cgroupv1.NewMemoryController().SetLimit("2M"))
 }

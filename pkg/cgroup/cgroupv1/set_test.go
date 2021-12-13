@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cgroup_test
+package cgroupv1_test
 
 import (
 	"fmt"
@@ -19,8 +19,8 @@ import (
 
 	"github.com/adalton/teleport-exercise/pkg/adaptation/os"
 	"github.com/adalton/teleport-exercise/pkg/adaptation/os/ostest"
-	"github.com/adalton/teleport-exercise/pkg/cgroup/v1"
-	"github.com/adalton/teleport-exercise/pkg/cgroup/v1/cgrouptest"
+	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
+	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1/cgroupv1test"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,8 +35,8 @@ func Test_Set_Create_Success(t *testing.T) {
 		RemoveFn:   removeRecorder.Remove,
 	}
 
-	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
-	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
+	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
 
 	err := set.Create()
 
@@ -45,7 +45,7 @@ func Test_Set_Create_Success(t *testing.T) {
 	assert.Equal(t, 0, len(removeRecorder.Events))
 	assert.Equal(t,
 		fmt.Sprintf("%s/%s/jobs/%s",
-			cgroup.DefaultBasePath,
+			cgroupv1.DefaultBasePath,
 			controller.Name(),
 			jobId.String(),
 		),
@@ -63,11 +63,11 @@ func Test_Set_Create_Failure(t *testing.T) {
 	}
 
 	expectedError := fmt.Errorf("injected error")
-	controller := &cgrouptest.ControllerMock{
+	controller := &cgroupv1test.ControllerMock{
 		ControllerName:   "nil",
 		ApplyReturnValue: expectedError,
 	}
-	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
 
 	err := set.Create()
 
@@ -75,7 +75,7 @@ func Test_Set_Create_Failure(t *testing.T) {
 	assert.Equal(t, 1, len(removeRecorder.Events))
 	assert.Equal(t,
 		fmt.Sprintf("%s/%s/jobs/%s",
-			cgroup.DefaultBasePath,
+			cgroupv1.DefaultBasePath,
 			controller.Name(),
 			jobId.String(),
 		),
@@ -90,8 +90,8 @@ func Test_Set_Destroy_Success(t *testing.T) {
 		RemoveFn: removeRecorder.Remove,
 	}
 
-	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
-	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
+	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
 
 	err := set.Destroy()
 
@@ -99,7 +99,7 @@ func Test_Set_Destroy_Success(t *testing.T) {
 	assert.Equal(t, 1, len(removeRecorder.Events))
 	assert.Equal(t,
 		fmt.Sprintf("%s/%s/jobs/%s",
-			cgroup.DefaultBasePath,
+			cgroupv1.DefaultBasePath,
 			controller.Name(),
 			jobId.String(),
 		),
@@ -117,8 +117,8 @@ func Test_Set_Destroy_Failure(t *testing.T) {
 		RemoveFn: removeRecorder.Remove,
 	}
 
-	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
-	set := cgroup.NewSetDetailed(adapter, cgroup.DefaultBasePath, jobId, controller)
+	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
 
 	err := set.Destroy()
 
@@ -129,15 +129,15 @@ func Test_Set_Destroy_Failure(t *testing.T) {
 func Test_Set_TaskFiles(t *testing.T) {
 	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 
-	controller := &cgrouptest.ControllerMock{ControllerName: "nil"}
-	set := cgroup.NewSet(jobId, controller)
+	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
+	set := cgroupv1.NewSet(jobId, controller)
 
 	taskFiles := set.TaskFiles()
 
 	assert.Equal(t, 1, len(taskFiles))
 	assert.Equal(t,
 		fmt.Sprintf("%s/%s/jobs/%s/tasks",
-			cgroup.DefaultBasePath,
+			cgroupv1.DefaultBasePath,
 			controller.Name(),
 			jobId.String(),
 		),

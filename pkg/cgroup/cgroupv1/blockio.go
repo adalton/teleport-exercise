@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cgroup
+package cgroupv1
 
 import "github.com/adalton/teleport-exercise/pkg/adaptation/os"
 

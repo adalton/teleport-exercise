@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cgroup_test
+package cgroupv1_test
 
 import (
 	"fmt"
@@ -19,22 +19,25 @@ import (
 
 	"github.com/adalton/teleport-exercise/pkg/adaptation/os"
 	"github.com/adalton/teleport-exercise/pkg/adaptation/os/ostest"
-	"github.com/adalton/teleport-exercise/pkg/cgroup/v1"
+	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_memory_Apply(t *testing.T) {
+func Test_cpu_Apply(t *testing.T) {
 	path := "/sys/fs/cgroup/jobs/889f7cc2-9935-4773-aaa1-b94478abc923"
 	writeRecorder := ostest.WriteFileMock{}
 	adapter := &os.Adapter{
 		WriteFileFn: writeRecorder.WriteFile,
 	}
 
-	limit := "500M"
-	mem := cgroup.NewMemoryControllerDetailed(adapter).SetLimit(limit)
-	mem.Apply(path)
+	cpu := cgroupv1.NewCpuControllerDetailed(adapter).SetCpus(2.0)
+	cpu.Apply(path)
 
-	assert.Equal(t, 1, len(writeRecorder.Events))
-	assert.Equal(t, fmt.Sprintf("%s/%s", path, cgroup.MemoryLimitInBytesFilename), writeRecorder.Events[0].Name)
-	assert.Equal(t, []byte(limit), writeRecorder.Events[0].Data)
+	assert.Equal(t, 2, len(writeRecorder.Events))
+	assert.Equal(t, fmt.Sprintf("%s/%s", path, cgroupv1.CpuPeriodFilename), writeRecorder.Events[0].Name)
+	assert.Equal(t, []byte("100000"), writeRecorder.Events[0].Data)
+
+	assert.Equal(t, fmt.Sprintf("%s/%s", path, cgroupv1.CpuQuotaFilename), writeRecorder.Events[1].Name)
+	assert.Equal(t, []byte("200000"), writeRecorder.Events[1].Data)
 }

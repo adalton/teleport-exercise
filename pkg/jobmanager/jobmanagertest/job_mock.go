@@ -16,7 +16,7 @@ package jobmanagertest
 import (
 	"fmt"
 
-	"github.com/adalton/teleport-exercise/pkg/cgroup/v1"
+	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 
@@ -37,7 +37,7 @@ type mockJob struct {
 func NewMockJob(
 	owner string,
 	jobName string,
-	controllers []cgroup.Controller,
+	controllers []cgroupv1.Controller,
 	programPath string,
 	arguments ...string,
 ) jobmanager.Job {

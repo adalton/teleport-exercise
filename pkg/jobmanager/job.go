@@ -20,7 +20,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/adalton/teleport-exercise/pkg/cgroup/v1"
+	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/config"
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/google/uuid"
@@ -58,7 +58,7 @@ type concreteJob struct {
 	owner         string
 	id            uuid.UUID
 	name          string
-	cgControllers []cgroup.Controller
+	cgControllers []cgroupv1.Controller
 	programName   string
 	programArgs   []string
 	cmd           *exec.Cmd
@@ -72,7 +72,7 @@ type concreteJob struct {
 func NewJob(
 	owner string,
 	name string,
-	cgControllers []cgroup.Controller,
+	cgControllers []cgroupv1.Controller,
 	programName string,
 	programArgs ...string,
 ) Job {
@@ -91,7 +91,7 @@ func NewJob(
 func NewJobDetailed(
 	owner string,
 	name string,
-	cgControllers []cgroup.Controller,
+	cgControllers []cgroupv1.Controller,
 	stdoutBuffer io.OutputBuffer,
 	stderrBuffer io.OutputBuffer,
 	programName string,
@@ -119,7 +119,7 @@ func (j *concreteJob) Start() error {
 		return fmt.Errorf("job %s (%v) has already been started", j.name, j.id)
 	}
 
-	cgroupSet := cgroup.NewSet(j.id, j.cgControllers...)
+	cgroupSet := cgroupv1.NewSet(j.id, j.cgControllers...)
 	if err := cgroupSet.Create(); err != nil {
 		return err
 	}
