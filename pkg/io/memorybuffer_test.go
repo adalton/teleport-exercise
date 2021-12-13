@@ -136,3 +136,28 @@ func Test_MemoryBuffer_ReadAt_EmptyBuffer(t *testing.T) {
 	assert.Equal(t, 0, bytesRead)
 	assert.Equal(t, 0, len(result))
 }
+
+func Test_MemoryBuffer_ReadAt_OffsetEqualToSize(t *testing.T) {
+	b := io.NewMemoryBuffer()
+	content := []byte("abcdefghijklmnopqrstuvwxyz")
+	result := make([]byte, 5)
+
+	b.Write(content)
+
+	bytesRead, err := b.ReadAt(result, int64(len(content)))
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, bytesRead)
+}
+
+func Test_MemoryBuffer_ReadAt_OffsetGreaterThanSize(t *testing.T) {
+	b := io.NewMemoryBuffer()
+	content := []byte("abcdefghijklmnopqrstuvwxyz")
+	result := make([]byte, 5)
+
+	b.Write(content)
+
+	_, err := b.ReadAt(result, int64(len(content)+1))
+
+	assert.Error(t, err)
+}
