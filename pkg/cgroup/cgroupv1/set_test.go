@@ -21,12 +21,13 @@ import (
 	"github.com/adalton/teleport-exercise/pkg/adaptation/os/ostest"
 	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1/cgroupv1test"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Set_Create_Success(t *testing.T) {
-	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
+	jobID, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 	mkdirAllRecorder := ostest.MkdirAllMock{}
 	removeRecorder := ostest.RemoveMock{}
 
@@ -36,7 +37,7 @@ func Test_Set_Create_Success(t *testing.T) {
 	}
 
 	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
-	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobID, controller)
 
 	err := set.Create()
 
@@ -47,13 +48,13 @@ func Test_Set_Create_Success(t *testing.T) {
 		fmt.Sprintf("%s/%s/jobs/%s",
 			cgroupv1.DefaultBasePath,
 			controller.Name(),
-			jobId.String(),
+			jobID.String(),
 		),
 		mkdirAllRecorder.Events[0].Path)
 }
 
 func Test_Set_Create_Failure(t *testing.T) {
-	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
+	jobID, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 	mkdirAllRecorder := ostest.MkdirAllMock{}
 	removeRecorder := ostest.RemoveMock{}
 
@@ -67,7 +68,7 @@ func Test_Set_Create_Failure(t *testing.T) {
 		ControllerName:   "nil",
 		ApplyReturnValue: expectedError,
 	}
-	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobID, controller)
 
 	err := set.Create()
 
@@ -77,13 +78,13 @@ func Test_Set_Create_Failure(t *testing.T) {
 		fmt.Sprintf("%s/%s/jobs/%s",
 			cgroupv1.DefaultBasePath,
 			controller.Name(),
-			jobId.String(),
+			jobID.String(),
 		),
 		removeRecorder.Events[0].Path)
 }
 
 func Test_Set_Destroy_Success(t *testing.T) {
-	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
+	jobID, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 	removeRecorder := ostest.RemoveMock{}
 
 	adapter := &os.Adapter{
@@ -91,7 +92,7 @@ func Test_Set_Destroy_Success(t *testing.T) {
 	}
 
 	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
-	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobID, controller)
 
 	err := set.Destroy()
 
@@ -101,13 +102,13 @@ func Test_Set_Destroy_Success(t *testing.T) {
 		fmt.Sprintf("%s/%s/jobs/%s",
 			cgroupv1.DefaultBasePath,
 			controller.Name(),
-			jobId.String(),
+			jobID.String(),
 		),
 		removeRecorder.Events[0].Path)
 }
 
 func Test_Set_Destroy_Failure(t *testing.T) {
-	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
+	jobID, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 	injectedError := fmt.Errorf("injected error")
 	removeRecorder := ostest.RemoveMock{
 		NextError: injectedError,
@@ -118,7 +119,7 @@ func Test_Set_Destroy_Failure(t *testing.T) {
 	}
 
 	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
-	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobId, controller)
+	set := cgroupv1.NewSetDetailed(adapter, cgroupv1.DefaultBasePath, jobID, controller)
 
 	err := set.Destroy()
 
@@ -127,10 +128,10 @@ func Test_Set_Destroy_Failure(t *testing.T) {
 }
 
 func Test_Set_TaskFiles(t *testing.T) {
-	jobId, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
+	jobID, _ := uuid.Parse("0b5183b8-b572-49c7-90c4-fffc775b7d7b")
 
 	controller := &cgroupv1test.ControllerMock{ControllerName: "nil"}
-	set := cgroupv1.NewSet(jobId, controller)
+	set := cgroupv1.NewSet(jobID, controller)
 
 	taskFiles := set.TaskFiles()
 
@@ -139,7 +140,7 @@ func Test_Set_TaskFiles(t *testing.T) {
 		fmt.Sprintf("%s/%s/jobs/%s/tasks",
 			cgroupv1.DefaultBasePath,
 			controller.Name(),
-			jobId.String(),
+			jobID.String(),
 		),
 		taskFiles[0])
 }

@@ -33,14 +33,14 @@ const (
 type Set struct {
 	osAdapter   *os.Adapter
 	basePath    string
-	jobId       uuid.UUID
+	jobID       uuid.UUID
 	controllers []Controller
 }
 
 // NewSet creates a new cgroup (v1) set for the given jobID.  This assumes that
 // the cgroup filesystem is mounted at /sys/fs/cgroup.
-func NewSet(jobId uuid.UUID, controllers ...Controller) *Set {
-	return NewSetDetailed(nil, DefaultBasePath, jobId, controllers...)
+func NewSet(jobID uuid.UUID, controllers ...Controller) *Set {
+	return NewSetDetailed(nil, DefaultBasePath, jobID, controllers...)
 }
 
 // NewSetDetailed creates a new cgroup (v1) set for the given jobID rooted
@@ -48,14 +48,14 @@ func NewSet(jobId uuid.UUID, controllers ...Controller) *Set {
 func NewSetDetailed(
 	osAdapter *os.Adapter,
 	basePath string,
-	jobId uuid.UUID,
+	jobID uuid.UUID,
 	controllers ...Controller,
 ) *Set {
 
 	return &Set{
 		osAdapter:   osAdapter,
 		basePath:    basePath,
-		jobId:       jobId,
+		jobID:       jobID,
 		controllers: controllers,
 	}
 }
@@ -70,7 +70,7 @@ func (s *Set) Create() (retErr error) {
 	failPoint := -1
 
 	for i := range s.controllers {
-		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobId.String())
+		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobID.String())
 
 		// Create the cgroup
 		if err := s.osAdapter.MkdirAll(path, defaultDirectoryPerms); err != nil {
@@ -88,7 +88,7 @@ func (s *Set) Create() (retErr error) {
 	}
 
 	for i := failPoint; i >= 0; i-- {
-		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobId.String())
+		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobID.String())
 
 		if err := s.osAdapter.Remove(path); err != nil {
 			log.Printf("Failed to backout cgroup %s: %v", s.controllers[i].Name(), err)
@@ -109,7 +109,7 @@ func (s *Set) Destroy() error {
 	var failedCgroups []string
 
 	for i := len(s.controllers) - 1; i >= 0; i-- {
-		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobId.String())
+		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobID.String())
 
 		if err := s.osAdapter.Remove(path); err != nil {
 			failedCgroups = append(failedCgroups, path)
@@ -137,7 +137,7 @@ func (s *Set) TaskFiles() []string {
 			"%s/%s/jobs/%s/tasks",
 			s.basePath,
 			s.controllers[i].Name(),
-			s.jobId.String()))
+			s.jobID.String()))
 	}
 
 	return taskFiles

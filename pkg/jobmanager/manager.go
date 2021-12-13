@@ -38,7 +38,7 @@ type Job interface {
 	StdoutStream() *io.ByteStream
 	StderrStream() *io.ByteStream
 	Name() string
-	Id() uuid.UUID
+	ID() uuid.UUID
 }
 
 // JobConstructor is a type that models a function for creating Jobs.
@@ -56,9 +56,9 @@ type JobConstructor func(
 // Manager maintains the set of jobs and enforces the authorization policy
 type Manager struct {
 	mutex               sync.RWMutex
-	jobsByUserByJobId   map[string]map[string]Job // userId->jobId->job
-	jobsByUserByJobName map[string]map[string]Job // userId->jobName->job
-	allJobsByJobId      map[string]Job            // jobId->job
+	jobsByUserByJobID   map[string]map[string]Job // userID->jobID->job
+	jobsByUserByJobName map[string]map[string]Job // userID->jobName->job
+	allJobsByJobID      map[string]Job            // jobID->job
 	controllers         []cgroupv1.Controller
 	jobConstructor      JobConstructor
 }
@@ -85,64 +85,64 @@ func NewManager() *Manager {
 // running jobs.
 func NewManagerDetailed(jobConstructor JobConstructor, controllers []cgroupv1.Controller) *Manager {
 	return &Manager{
-		jobsByUserByJobId:   make(map[string]map[string]Job),
+		jobsByUserByJobID:   make(map[string]map[string]Job),
 		jobsByUserByJobName: make(map[string]map[string]Job),
-		allJobsByJobId:      make(map[string]Job),
+		allJobsByJobID:      make(map[string]Job),
 		controllers:         controllers,
 		jobConstructor:      jobConstructor,
 	}
 }
 
-// Start starts a new job with the given JobName for the given userId.
+// Start starts a new job with the given JobName for the given userID.
 // The programPath and arguments are the program the user wants to run and
 // the arguments to that program.
-func (m *Manager) Start(userId, jobName, programPath string, arguments []string) (Job, error) {
+func (m *Manager) Start(userID, jobName, programPath string, arguments []string) (Job, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if _, exists := m.jobsByUserByJobId[userId]; !exists {
-		m.jobsByUserByJobId[userId] = make(map[string]Job)
-		m.jobsByUserByJobName[userId] = make(map[string]Job)
+	if _, exists := m.jobsByUserByJobID[userID]; !exists {
+		m.jobsByUserByJobID[userID] = make(map[string]Job)
+		m.jobsByUserByJobName[userID] = make(map[string]Job)
 	}
 
-	if _, exists := m.jobsByUserByJobName[userId][jobName]; exists {
+	if _, exists := m.jobsByUserByJobName[userID][jobName]; exists {
 		return nil, fmt.Errorf("job with name '%s' exists already", jobName)
 	}
 
-	job := m.jobConstructor(userId, jobName, m.controllers, programPath, arguments...)
+	job := m.jobConstructor(userID, jobName, m.controllers, programPath, arguments...)
 
-	m.jobsByUserByJobId[userId][job.Id().String()] = job
-	m.jobsByUserByJobName[userId][jobName] = job
-	m.allJobsByJobId[job.Id().String()] = job
+	m.jobsByUserByJobID[userID][job.ID().String()] = job
+	m.jobsByUserByJobName[userID][jobName] = job
+	m.allJobsByJobID[job.ID().String()] = job
 
 	return job, job.Start()
 }
 
-// Stop stops an existing job with the given jobId for the given userId.
-func (m *Manager) Stop(userId, jobId string) error {
+// Stop stops an existing job with the given jobID for the given userID.
+func (m *Manager) Stop(userID, jobID string) error {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userId, jobId); err != nil {
+	if job, err := m.findJobByUser(userID, jobID); err != nil {
 		return err
 	} else {
 		return job.Stop()
 	}
 }
 
-// List returns a list of the jobs owned by the given userId.
-func (m *Manager) List(userId string) []*JobStatus {
+// List returns a list of the jobs owned by the given userID.
+func (m *Manager) List(userID string) []*JobStatus {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
 	var jobStatusList []*JobStatus
 
-	if userId == Superuser {
-		for _, job := range m.allJobsByJobId {
+	if userID == Superuser {
+		for _, job := range m.allJobsByJobID {
 			jobStatusList = append(jobStatusList, job.Status())
 		}
 	} else {
-		if l2map, exists := m.jobsByUserByJobId[userId]; exists {
+		if l2map, exists := m.jobsByUserByJobID[userID]; exists {
 			jobStatusList = make([]*JobStatus, 0, len(l2map))
 
 			for _, job := range l2map {
@@ -154,13 +154,13 @@ func (m *Manager) List(userId string) []*JobStatus {
 	return jobStatusList
 }
 
-// Status returns the status of the job with the given JobId owned by
-// the given userId.
-func (m *Manager) Status(userId, jobId string) (*JobStatus, error) {
+// Status returns the status of the job with the given JobID owned by
+// the given userID.
+func (m *Manager) Status(userID, jobID string) (*JobStatus, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userId, jobId); err != nil {
+	if job, err := m.findJobByUser(userID, jobID); err != nil {
 		return nil, err
 	} else {
 		return job.Status(), nil
@@ -168,12 +168,12 @@ func (m *Manager) Status(userId, jobId string) (*JobStatus, error) {
 }
 
 // StdoutStream returns an io.ByteStream for reading the standard output generated
-// by the job with the given jobId own by the given userId.
-func (m *Manager) StdoutStream(userId, jobId string) (*io.ByteStream, error) {
+// by the job with the given jobID own by the given userID.
+func (m *Manager) StdoutStream(userID, jobID string) (*io.ByteStream, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userId, jobId); err != nil {
+	if job, err := m.findJobByUser(userID, jobID); err != nil {
 		return nil, err
 	} else {
 		return job.StdoutStream(), nil
@@ -182,33 +182,33 @@ func (m *Manager) StdoutStream(userId, jobId string) (*io.ByteStream, error) {
 }
 
 // Stderr returns an io.ByteStream for reading the standard error generated
-// by the job with the given jobId own by the given userId.
-func (m *Manager) StderrStream(userId, jobId string) (*io.ByteStream, error) {
+// by the job with the given jobID own by the given userID.
+func (m *Manager) StderrStream(userID, jobID string) (*io.ByteStream, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if job, err := m.findJobByUser(userId, jobId); err != nil {
+	if job, err := m.findJobByUser(userID, jobID); err != nil {
 		return nil, err
 	} else {
 		return job.StderrStream(), nil
 	}
 }
 
-// findJobByUser finds a the job with the given jobId that is owned by
-// the given userId.  If no such job is found, it returns an error.
+// findJobByUser finds a the job with the given jobID that is owned by
+// the given userID.  If no such job is found, it returns an error.
 // The caller must own the read lock associated with the given Manager.
-func (m *Manager) findJobByUser(userId, jobId string) (Job, error) {
-	if userId == Superuser {
-		if job, exists := m.allJobsByJobId[jobId]; exists {
+func (m *Manager) findJobByUser(userID, jobID string) (Job, error) {
+	if userID == Superuser {
+		if job, exists := m.allJobsByJobID[jobID]; exists {
 			return job, nil
 		}
 	} else {
-		if l2map, exists := m.jobsByUserByJobId[userId]; exists {
-			if job, exists := l2map[jobId]; exists {
+		if l2map, exists := m.jobsByUserByJobID[userID]; exists {
+			if job, exists := l2map[jobID]; exists {
 				return job, nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("job '%s' does not exist", jobId)
+	return nil, fmt.Errorf("job '%s' does not exist", jobID)
 }

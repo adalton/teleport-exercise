@@ -90,14 +90,14 @@ func (m *mockJob) Status() *jobmanager.JobStatus {
 	return &jobmanager.JobStatus{
 		Owner:    m.owner,
 		Name:     m.name,
-		Id:       m.id.String(),
+		ID:       m.id.String(),
 		Running:  m.running,
 		Pid:      1234,
 		ExitCode: exitCode,
 	}
 }
 
-func (m *mockJob) Id() uuid.UUID {
+func (m *mockJob) ID() uuid.UUID {
 	return m.id
 }
 
