@@ -28,10 +28,6 @@ type ByteStream struct {
 	buffer         OutputBuffer
 	channel        chan []byte
 	maxReadSize    int
-
-	// mutex guards the fields that follow
-	mutex            sync.Mutex
-	goroutineStarted bool
 }
 
 // NewByteStream creates and returns a new ByteStream associated with the
