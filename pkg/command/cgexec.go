@@ -72,5 +72,5 @@ func CgexecDetailed(args []string, osa *os.Adapter, sa *syscall.Adapter) error {
 	}
 
 	// This should never happen
-	return fmt.Errorf("reached end of Cgexec unexpectedly")
+	panic("Reached end of Cgexec unexpectedly")
 }
