@@ -23,7 +23,8 @@ EXECUTABLES += $(BUILDDIR)/test-networknamespace
 
 GOTEST := go test
 ifneq ($(shell which gotestsum),)
-	GOTEST := gotestsum -- endif
+	GOTEST := gotestsum -- 
+endif
 
 all: $(BUILDDIR) $(BUILDDIR)/cgexec $(EXECUTABLES)
 
