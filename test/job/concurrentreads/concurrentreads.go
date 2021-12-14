@@ -15,13 +15,17 @@ package main
 
 import (
 	"bufio"
-	"bytes"
+	"fmt"
+	"io"
+	"strings"
 	"sync"
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 )
 
 func runTest() {
+
+	numValues := 100 * 1000
 
 	job := jobmanager.NewJob("theOwner", "my-test", nil,
 		"/bin/bash",
@@ -50,16 +54,41 @@ func runTest() {
 
 	wg.Wait()
 
-	var readers [numGoroutines]*bufio.Reader
-	for i := 0; i < numGoroutines-1; i++ {
-		readers[i] = bufio.NewReader(bytes.NewReader(buckets[i]))
+	var readers [len(buckets)]*bufio.Reader
+	for i := 0; i < len(readers); i++ {
+		readers[i] = bufio.NewReader(strings.NewReader(string(buckets[i])))
 	}
 
-	for i := 0; i < numGoroutines-1; i++ {
+	for i := 0; i < numValues; i++ {
+		expectedValue, err := readers[0].ReadString('\n')
+		if err != nil {
+			panic(fmt.Sprintf("Unexpected error at value number %d, goroutine 0: %v", i, err))
+		}
+
+		for j := 1; j < len(readers); j++ {
+			value, err := readers[j].ReadString('\n')
+			if err != nil {
+				panic(fmt.Sprintf("Unexpected error at value number %d, goroutine %d: %v", i, j, err))
+			}
+
+			if expectedValue != value {
+				panic(fmt.Sprintf("value mismatch at %d: %s/%s\n", i, expectedValue, value))
+			}
+		}
 	}
+
+	// There should be no more values; all readers should be at EOF
+	for i := 0; i < len(readers); i++ {
+		_, err := readers[i].ReadString('\n')
+		if err != io.EOF {
+			panic(fmt.Sprintf("Unexpected additional data from goroutine %d", i))
+		}
+	}
+
+	fmt.Printf("Matched %d matched generated values across %d goroutines\n", numValues, numGoroutines)
 }
 
-// The job generates 10000 random numbers and prints them to standard output
+// The job generates 100000 random numbers and prints them to standard output
 // The program starts 100 goroutines to consume that output.  Each goroutine
 // counts and prints the number of bytes that it receives.
 
