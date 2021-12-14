@@ -70,7 +70,7 @@ func (s *Set) Create() (retErr error) {
 	failPoint := -1
 
 	for i := range s.controllers {
-		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobID.String())
+		path := s.cgroupDir(s.jobID, s.controllers[i].Name())
 
 		// Create the cgroup
 		if err := s.osAdapter.MkdirAll(path, defaultDirectoryPerms); err != nil {
@@ -88,7 +88,7 @@ func (s *Set) Create() (retErr error) {
 	}
 
 	for i := failPoint; i >= 0; i-- {
-		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobID.String())
+		path := s.cgroupDir(s.jobID, s.controllers[i].Name())
 
 		if err := s.osAdapter.Remove(path); err != nil {
 			log.Printf("Failed to backout cgroup %s: %v", s.controllers[i].Name(), err)
@@ -109,7 +109,7 @@ func (s *Set) Destroy() error {
 	var failedCgroups []string
 
 	for i := len(s.controllers) - 1; i >= 0; i-- {
-		path := fmt.Sprintf("%s/%s/jobs/%s", s.basePath, s.controllers[i].Name(), s.jobID.String())
+		path := s.cgroupDir(s.jobID, s.controllers[i].Name())
 
 		if err := s.osAdapter.Remove(path); err != nil {
 			failedCgroups = append(failedCgroups, path)
@@ -141,4 +141,8 @@ func (s *Set) TaskFiles() []string {
 	}
 
 	return taskFiles
+}
+
+func (s *Set) cgroupDir(jobID uuid.UUID, controllerName string) string {
+	return fmt.Sprintf("%s/%s/jobs/%s", s.basePath, controllerName, jobID.String())
 }

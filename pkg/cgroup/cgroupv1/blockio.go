@@ -24,7 +24,9 @@ const (
 	BlkioThrottleWriteBpsDevice = "blkio.throttle.write_bps_device"
 )
 
-// BlockIOController implements the BlockIOController cgroup controller
+// BlockIOController implements the BlockIOController cgroup controller.
+// Both ReadBpsDevice and WriteBpsDevice are the strings that are written to
+// the cgroup files.  Their format is: "<major>:<minor> <bytesPerSecond>"
 type BlockIOController struct {
 	OsAdapter      *os.Adapter
 	ReadBpsDevice  string
