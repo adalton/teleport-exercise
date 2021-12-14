@@ -193,5 +193,5 @@ func main() {
 	runTest()
 
 	fmt.Println("Running Memory test with cgroup constraints at 2M")
-	runTest(cgroupv1.NewMemoryController().SetLimit("2M"))
+	runTest(&cgroupv1.MemoryController{Limit: "2M"})
 }

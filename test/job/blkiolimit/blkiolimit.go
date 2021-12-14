@@ -62,7 +62,8 @@ func main() {
 	deviceString := fmt.Sprintf("8:16 %d", 1024*1024*20)
 	fmt.Printf("Running Blkio test with cgroup constraints with %s\n", deviceString)
 
-	runTest(cgroupv1.NewBlockIOController().
-		SetReadBpsDevice(deviceString).
-		SetWriteBpsDevice(deviceString))
+	runTest(&cgroupv1.BlockIOController{
+		ReadBpsDevice:  deviceString,
+		WriteBpsDevice: deviceString,
+	})
 }

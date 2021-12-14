@@ -72,5 +72,5 @@ func main() {
 	runTest()
 
 	fmt.Println("Running CPU test with cgroup constraints at 0.5 CPU")
-	runTest(cgroupv1.NewCpuController().SetCpus(0.5))
+	runTest(&cgroupv1.CpuController{Cpus: 0.5})
 }

@@ -31,7 +31,7 @@ func Test_cpu_Apply(t *testing.T) {
 		WriteFileFn: writeRecorder.WriteFile,
 	}
 
-	cpu := cgroupv1.NewCpuControllerDetailed(adapter).SetCpus(2.0)
+	cpu := cgroupv1.CpuController{OsAdapter: adapter, Cpus: 2.0}
 	cpu.Apply(path)
 
 	assert.Equal(t, 2, len(writeRecorder.Events))

@@ -31,7 +31,7 @@ func Test_memory_Apply(t *testing.T) {
 	}
 
 	limit := "500M"
-	mem := cgroupv1.NewMemoryControllerDetailed(adapter).SetLimit(limit)
+	mem := &cgroupv1.MemoryController{OsAdapter: adapter, Limit: limit}
 	mem.Apply(path)
 
 	assert.Equal(t, 1, len(writeRecorder.Events))
