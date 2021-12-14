@@ -133,13 +133,6 @@ func (j *concreteJob) Start() error {
 	j.running = true
 
 	go func() {
-		defer j.lockedOperation(func() {
-			if err := cgroupSet.Destroy(); err != nil {
-				j.runErrors = append(j.runErrors, err)
-			}
-			j.running = false
-		})
-
 		// Run blocks until the newly-created process terminates.  It calls
 		// Wait internally
 		err := j.cmd.Run()
@@ -157,6 +150,11 @@ func (j *concreteJob) Start() error {
 			if err := j.stderrBuffer.Close(); err != nil {
 				j.runErrors = append(j.runErrors, err)
 			}
+
+			if err := cgroupSet.Destroy(); err != nil {
+				j.runErrors = append(j.runErrors, err)
+			}
+			j.running = false
 		})
 	}()
 

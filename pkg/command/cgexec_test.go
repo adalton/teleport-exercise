@@ -28,9 +28,8 @@ import (
 
 func Test_Cgexec_WriteCgroupFiles_Success(t *testing.T) {
 	writeFileRecorder := &ostest.WriteFileMock{}
-	pidGenerator := &ostest.GetpidMock{
-		Pid: 1234,
-	}
+	pidGenerator := ostest.GetpidMock(1234)
+
 	osa := &os.Adapter{
 		WriteFileFn: writeFileRecorder.WriteFile,
 		GetpidFn:    pidGenerator.Getpid,
@@ -53,7 +52,7 @@ func Test_Cgexec_WriteCgroupFiles_Success(t *testing.T) {
 
 	assert.Equal(t, 1, len(writeFileRecorder.Events))
 	assert.Equal(t, cgfile, writeFileRecorder.Events[0].Name)
-	assert.Equal(t, fmt.Sprintf("%d", pidGenerator.Pid), string(writeFileRecorder.Events[0].Data))
+	assert.Equal(t, fmt.Sprintf("%d", pidGenerator), string(writeFileRecorder.Events[0].Data))
 }
 
 func Test_Cgexec_WriteCgroupFiles_Failure(t *testing.T) {
@@ -61,9 +60,10 @@ func Test_Cgexec_WriteCgroupFiles_Failure(t *testing.T) {
 	writeFileRecorder := &ostest.WriteFileMock{
 		NextError: expectedError,
 	}
+	var pidGenerator ostest.GetpidMock
 	osa := &os.Adapter{
 		WriteFileFn: writeFileRecorder.WriteFile,
-		GetpidFn:    (&ostest.GetpidMock{}).Getpid,
+		GetpidFn:    pidGenerator.Getpid,
 	}
 
 	sc := &syscall.Adapter{
@@ -85,15 +85,13 @@ func Test_Cgexec_WriteCgroupFiles_Failure(t *testing.T) {
 }
 
 func Test_Cgexec_Exec(t *testing.T) {
-	env := []string{"x=y"}
-	envGen := &ostest.EnvironMock{
-		Environment: env,
-	}
+	env := ostest.EnvironMock{"x=y"}
+	var pidGenerator ostest.GetpidMock
 
 	osa := &os.Adapter{
 		WriteFileFn: (&ostest.WriteFileMock{}).WriteFile,
-		GetpidFn:    (&ostest.GetpidMock{}).Getpid,
-		EnvironFn:   envGen.Environ,
+		GetpidFn:    pidGenerator.Getpid,
+		EnvironFn:   env.Environ,
 	}
 
 	execRecorder := &syscalltest.ExecMock{}
@@ -119,5 +117,5 @@ func Test_Cgexec_Exec(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, commandName, execRecorder.Argv0)
 	assert.Equal(t, argv, execRecorder.Argv)
-	assert.Equal(t, env, execRecorder.Envv)
+	assert.Equal(t, env, ostest.EnvironMock(execRecorder.Envv))
 }
