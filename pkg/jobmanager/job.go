@@ -214,7 +214,7 @@ func (j *concreteJob) Status() *JobStatus {
 		status.Pid = j.cmd.Process.Pid
 	}
 
-	if state := j.cmd.ProcessState; state == nil {
+	if state := j.cmd.ProcessState; state != nil {
 		if sys := state.Sys(); sys != nil {
 			if ws, ok := sys.(syscall.WaitStatus); ok {
 				status.SignalNum = ws.Signal()
