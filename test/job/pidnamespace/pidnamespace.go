@@ -15,6 +15,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 )
@@ -31,10 +32,17 @@ func runTest() {
 		panic(err)
 	}
 
-	for output := range job.StdoutStream().Stream() {
-		fmt.Print(string(output))
+	output := <-job.StdoutStream().Stream()
+	if output == nil {
+		panic("Received nil response")
 	}
-	fmt.Printf("\n")
+	outputStr := strings.TrimSpace(string(output))
+
+	if outputStr != "1" {
+		panic("The pid of the process should have been 1, not " + outputStr)
+	}
+
+	fmt.Println(outputStr)
 }
 
 // Sample run:
