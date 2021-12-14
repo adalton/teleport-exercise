@@ -14,10 +14,9 @@ limitations under the License.
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
@@ -38,7 +37,7 @@ func runTest() {
 	}
 
 	const numGoroutines = 100
-	var buckets [numGoroutines][]byte
+	var buckets [numGoroutines]bytes.Buffer
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
@@ -46,7 +45,7 @@ func runTest() {
 	for i := 0; i < numGoroutines; i++ {
 		go func(goroutineNum int) {
 			for output := range job.StdoutStream().Stream() {
-				buckets[goroutineNum] = append(buckets[goroutineNum], output...)
+				buckets[goroutineNum].Write(output)
 			}
 			wg.Done()
 		}(i)
@@ -54,19 +53,14 @@ func runTest() {
 
 	wg.Wait()
 
-	var readers [len(buckets)]*bufio.Reader
-	for i := 0; i < len(readers); i++ {
-		readers[i] = bufio.NewReader(strings.NewReader(string(buckets[i])))
-	}
-
 	for i := 0; i < numValues; i++ {
-		expectedValue, err := readers[0].ReadString('\n')
+		expectedValue, err := buckets[0].ReadString('\n')
 		if err != nil {
 			panic(fmt.Sprintf("Unexpected error at value number %d, goroutine 0: %v", i, err))
 		}
 
-		for j := 1; j < len(readers); j++ {
-			value, err := readers[j].ReadString('\n')
+		for j := 1; j < len(buckets); j++ {
+			value, err := buckets[j].ReadString('\n')
 			if err != nil {
 				panic(fmt.Sprintf("Unexpected error at value number %d, goroutine %d: %v", i, j, err))
 			}
@@ -78,8 +72,8 @@ func runTest() {
 	}
 
 	// There should be no more values; all readers should be at EOF
-	for i := 0; i < len(readers); i++ {
-		_, err := readers[i].ReadString('\n')
+	for i := 0; i < len(buckets); i++ {
+		_, err := buckets[i].ReadString('\n')
 		if err != io.EOF {
 			panic(fmt.Sprintf("Unexpected additional data from goroutine %d", i))
 		}
