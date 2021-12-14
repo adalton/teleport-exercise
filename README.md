@@ -33,7 +33,7 @@ You can run the unit tests with `make test`.
 
 You can build the `cgexec` binary using `make cgexec`.  The resulting binary
 will be stored in `build/cgexec`  The tests current expect that binary to
-be available in the `/tmp` directory; you'll have to copy it there manually.
+be available in the same directory as the test binary.
 
 I've provided the following tests to exercise functionality that is suitable
 for unit testing.  I currently run this via `sudo`, but I plan to look into
