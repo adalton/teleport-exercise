@@ -14,6 +14,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
@@ -23,6 +24,7 @@ func runTest() {
 
 	job := jobmanager.NewJob("theOwner", "my-test", nil,
 		"/bin/ip",
+		"-j",
 		"link",
 	)
 
@@ -30,10 +32,27 @@ func runTest() {
 		panic(err)
 	}
 
+	var outputBuffer []byte
+
 	for output := range job.StdoutStream().Stream() {
-		fmt.Print(string(output))
+		outputBuffer = append(outputBuffer, output...)
 	}
-	fmt.Printf("\n")
+
+	type iface struct {
+		Ifindex *int    `json:"ifindex,omitempty"`
+		Ifname  *string `json:"ifname,omitempty"`
+	}
+	var ifaceList []iface
+
+	if err := json.Unmarshal(outputBuffer, &ifaceList); err != nil {
+		panic(err)
+	}
+
+	if len(ifaceList) != 2 {
+		panic(fmt.Sprintf("Expected 2, found: %d", len(ifaceList)))
+	}
+
+	fmt.Println("Found expected number of network interface in new network namespace (2)")
 }
 
 // Sample run:
