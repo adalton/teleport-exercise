@@ -14,7 +14,6 @@ SHELL = bash
 MKDIR = mkdir -p
 BUILDDIR = build
 COVERAGEDIR=$(BUILDDIR)/coverage
-EXECUTABLES += $(BUILDDIR)/test-blkiolimit
 EXECUTABLES += $(BUILDDIR)/test-memorylimit
 
 GOTEST := go test
@@ -33,9 +32,6 @@ $(BUILDDIR)/cgexec: GOARCH=amd64
 $(BUILDDIR)/cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build'
 $(BUILDDIR)/cgexec: dep $(BUILDDIR) cmd/cgexec/cgexec.go
 	go build -race -o $(BUILDDIR)/cgexec cmd/cgexec/cgexec.go
-
-$(BUILDDIR)/test-blkiolimit: dep $(BUILDDIR) test/job/blkiolimit/blkiolimit.go
-	go build -race -o $(BUILDDIR)/test-blkiolimit test/job/blkiolimit/blkiolimit.go
 
 $(BUILDDIR)/test-memorylimit: dep $(BUILDDIR) test/job/memorylimit/memorylimit.go
 	go build -race -o $(BUILDDIR)/test-memorylimit test/job/memorylimit/memorylimit.go
