@@ -171,6 +171,10 @@ func (j *concreteJob) Stop() error {
 		return nil
 	}
 
+	if j.cmd == nil || j.cmd.Process == nil {
+		return fmt.Errorf("job is in the running state but has not completed start")
+	}
+
 	if err := j.cmd.Process.Kill(); err != nil && err != os.ErrProcessDone {
 		return err
 	}
