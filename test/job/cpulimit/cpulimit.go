@@ -14,63 +14,71 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"runtime"
+	"math"
+	"strconv"
+	"strings"
 
 	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 )
 
-func runTest(controllers ...cgroupv1.Controller) {
+func runTest(controllers ...cgroupv1.Controller) float64 {
 
 	job := jobmanager.NewJob("theOwner", "my-test", controllers,
-		"/usr/bin/stress-ng",
-		"--cpu",
-		fmt.Sprintf("%d", runtime.NumCPU()),
-		"--timeout",
-		"20",
-		"--times",
+		"/bin/bash",
+		"-c",
+		"/usr/bin/stress-ng --cpu 1 --timeout 10 --times 2>&1 | "+
+			"grep 'user time' | sed -e s'/.*( *//' -e 's/%.$//'",
 	)
 
 	if err := job.Start(); err != nil {
 		panic(err)
 	}
 
-	for output := range job.StderrStream().Stream() {
-		fmt.Print(string(output))
+	allOutput := bytes.Buffer{}
+
+	for output := range job.StdoutStream().Stream() {
+		allOutput.Write(output)
 	}
-	fmt.Printf("\n")
+
+	output, err := allOutput.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+
+	value, err := strconv.ParseFloat(strings.TrimSpace(output), 64)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("user time: %3.2f\n", value)
+
+	return value
 }
 
 // Sample run:
 //     $ sudo go run test/job/cpulimit/cpulimit.go
-//     Password:
 //     Running CPU test with no cgroup constraints
-//     stress-ng: info:  [1] setting to a 20 second run per stressor
-//     stress-ng: info:  [1] dispatching hogs: 12 cpu
-//     stress-ng: info:  [1] successful run completed in 20.01s
-//     stress-ng: info:  [1] for a 20.01s run time:
-//     stress-ng: info:  [1]     240.09s available CPU time
-//     stress-ng: info:  [1]     239.37s user time   ( 99.70%)
-//     stress-ng: info:  [1]       0.05s system time (  0.02%)
-//     stress-ng: info:  [1]     239.42s total time  ( 99.72%)
-//     stress-ng: info:  [1] load average: 5.83 2.88 2.22
-//
+//     user time: 8.33
 //     Running CPU test with cgroup constraints at 0.5 CPU
-//     stress-ng: info:  [1] setting to a 20 second run per stressor
-//     stress-ng: info:  [1] dispatching hogs: 12 cpu
-//     stress-ng: info:  [1] successful run completed in 20.13s
-//     stress-ng: info:  [1] for a 20.13s run time:
-//     stress-ng: info:  [1]     241.60s available CPU time
-//     stress-ng: info:  [1]      10.08s user time   (  4.17%)
-//     stress-ng: info:  [1]       0.02s system time (  0.01%)
-//     stress-ng: info:  [1]      10.10s total time  (  4.18%)
-//     stress-ng: info:  [1] load average: 5.47 2.99 2.27
+//     user time: 4.18
 
 func main() {
 	fmt.Println("Running CPU test with no cgroup constraints")
-	runTest()
+	oneCpuResult := runTest()
 
 	fmt.Println("Running CPU test with cgroup constraints at 0.5 CPU")
-	runTest(&cgroupv1.CpuController{Cpus: 0.5})
+	halfCpuResult := runTest(&cgroupv1.CpuController{Cpus: 0.5})
+
+	if !aboutHalf(oneCpuResult, halfCpuResult) {
+		panic(fmt.Sprintf("%3.2f is not about half of %3.2f", halfCpuResult, oneCpuResult))
+	}
+}
+
+func aboutHalf(firstResult, secondResult float64) bool {
+	const closenessThreshold float64 = 0.5
+
+	return math.Abs((firstResult/2.0)-secondResult) <= closenessThreshold
 }
