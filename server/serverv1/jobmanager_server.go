@@ -15,6 +15,7 @@ package serverv1
 
 import (
 	"context"
+	"errors"
 
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
@@ -47,9 +48,7 @@ func (s *jobmanagerServer) Start(ctx context.Context, jcr *v1.JobCreationRequest
 
 	job, err := s.jm.Start(userID, jcr.GetName(), jcr.GetProgramPath(), jcr.GetArguments())
 	if err != nil {
-		// Todo: Examine Start implementation.  See if there are any errors
-		//       that we should map to more meaningful gRCP error codes.
-		return nil, status.Errorf(codes.Unknown, err.Error())
+		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
 
 	jobResponse := &v1.Job{
@@ -68,9 +67,7 @@ func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *v1.JobID) (*v
 
 	err = s.jm.Stop(userID, requestJobID.Id)
 	if err != nil {
-		// Todo: Examine Stop implementation.  See if there are any errors
-		//       that we should map to more meaningful gRCP error codes.
-		return nil, status.Errorf(codes.Unknown, err.Error())
+		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
 
 	return &v1.NilMessage{}, nil
@@ -105,9 +102,7 @@ func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *v1.JobID) (*
 
 	jobStatus, err := s.jm.Status(userID, requestJobID.Id)
 	if err != nil {
-		// Todo: Examine Status implementation.  See if there are any errors
-		//       that we should map to more meaningful gRCP error codes.
-		return nil, status.Errorf(codes.Unknown, err.Error())
+		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
 
 	return internalToExternalStatusV1(jobStatus), nil
@@ -157,9 +152,7 @@ func (s *jobmanagerServer) StreamOutput(
 	}
 
 	if err != nil {
-		// Todo: Examine Stream* implementation.  See if there are any errors
-		//       that we should map to more meaningful gRCP error codes.
-		return status.Errorf(codes.Unknown, err.Error())
+		return status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
 
 	for data := range byteStream.Stream() {
@@ -169,10 +162,29 @@ func (s *jobmanagerServer) StreamOutput(
 	return nil
 }
 
+// userIDFromContext extracts and returns the userID from the given context.
+// If the userID doesn't exist, returns an error ready to be returned by a
+// gRPC API.
 func (s *jobmanagerServer) userIDFromContext(ctx context.Context) (string, error) {
 	if userID, ok := ctx.Value(&UserIDContext{}).(string); ok && userID != "" {
 		return userID, nil
 	}
 
 	return "", status.Errorf(codes.Unauthenticated, "jobmanager: user unauthenticated")
+}
+
+// errorToGRPCErrorCode maps the given error to a suitable gRPC error code.
+// If no mapping is found, it will return codes.Internal.
+func errorToGRPCErrorCode(err error) codes.Code {
+	code := codes.Internal
+
+	if errors.Is(err, &jobmanager.JobExistsError{}) {
+		code = codes.AlreadyExists
+	} else if errors.Is(err, &jobmanager.JobNotFoundError{}) {
+		code = codes.NotFound
+	} else if errors.Is(err, &jobmanager.InvalidJobID{}) {
+		code = codes.InvalidArgument
+	}
+
+	return code
 }
