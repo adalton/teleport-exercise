@@ -14,14 +14,13 @@ SHELL = bash
 MKDIR = mkdir -p
 BUILDDIR = build
 COVERAGEDIR=$(BUILDDIR)/coverage
-EXECUTABLES += $(BUILDDIR)/test-memorylimit
 
 GOTEST := go test
 ifneq ($(shell which gotestsum),)
 	GOTEST := gotestsum -- 
 endif
 
-all: $(BUILDDIR) $(BUILDDIR)/cgexec $(EXECUTABLES)
+all: $(BUILDDIR) $(BUILDDIR)/cgexec
 
 $(BUILDDIR):
 	$(MKDIR) $(BUILDDIR)
@@ -32,9 +31,6 @@ $(BUILDDIR)/cgexec: GOARCH=amd64
 $(BUILDDIR)/cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build'
 $(BUILDDIR)/cgexec: dep $(BUILDDIR) cmd/cgexec/cgexec.go
 	go build -race -o $(BUILDDIR)/cgexec cmd/cgexec/cgexec.go
-
-$(BUILDDIR)/test-memorylimit: dep $(BUILDDIR) test/job/memorylimit/memorylimit.go
-	go build -race -o $(BUILDDIR)/test-memorylimit test/job/memorylimit/memorylimit.go
 
 clean:
 	$(RM) -r $(BUILDDIR)
@@ -53,6 +49,7 @@ test: vet $(COVERAGEDIR)
 inttest: vet $(BUILDDIR)/cgexec
 	@cp $(BUILDDIR)/cgexec /tmp
 	@sudo go test -v -race --tags=integration ./test/...
+.PHONY: inttest
 
 vet: dep
 	@go vet -race ./...
