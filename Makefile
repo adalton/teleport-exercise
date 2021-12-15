@@ -20,7 +20,7 @@ ifneq ($(shell which gotestsum),)
 	GOTEST := gotestsum -- 
 endif
 
-all: $(BUILDDIR) $(BUILDDIR)/cgexec
+all: proto $(BUILDDIR) $(BUILDDIR)/cgexec
 
 $(BUILDDIR):
 	$(MKDIR) $(BUILDDIR)
@@ -32,8 +32,16 @@ $(BUILDDIR)/cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build
 $(BUILDDIR)/cgexec: dep $(BUILDDIR) cmd/cgexec/cgexec.go
 	go build -race -o $(BUILDDIR)/cgexec cmd/cgexec/cgexec.go
 
+proto:
+	@if ! which protoc > /dev/null; then \
+		echo "error: protoc not installed" >&2; \
+		exit 1; \
+	fi
+	protoc --proto_path=./service/v1/ --go_out=./service/v1 --go_opt=paths=source_relative --go-grpc_out=./service/v1 --go-grpc_opt=paths=source_relative ./service/v1/jobmanager.proto
+.PHONY: proto
+
 clean:
-	$(RM) -r $(BUILDDIR)
+	$(RM) -r $(BUILDDIR) ./service/v1/jobmanager_grpc.pb.go  ./service/v1/jobmanager.pb.go
 .PHONY: clean
 
 $(COVERAGEDIR):
@@ -57,4 +65,5 @@ vet: dep
 
 dep:
 	@go mod download
+	@go mod tidy
 .PHONY: dep
