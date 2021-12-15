@@ -29,12 +29,23 @@ var (
 
 // init sets CgexecPath based on the position of the current executable
 func init() {
+	const binaryName = "/cgexec"
+
 	exe, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
 
-	CgexecPath = path.Dir(exe) + "/cgexec"
+	CgexecPath = path.Dir(exe) + binaryName
+
+	if _, err := os.Stat(CgexecPath); err != nil {
+		// Fallback to a well-known location; this would normally not be in /tmp
+		CgexecPath = "/tmp" + binaryName
+
+		if _, err = os.Stat(CgexecPath); err != nil {
+			panic(err)
+		}
+	}
 }
 
 const (

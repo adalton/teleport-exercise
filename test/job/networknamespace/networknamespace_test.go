@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 /*
 Copyright 2021 Andy Dalton
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,26 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package networknamespace_test
 
 import (
 	"encoding/json"
-	"fmt"
+	"testing"
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func runTest() {
-
+func Test_networknamespace(t *testing.T) {
 	job := jobmanager.NewJob("theOwner", "my-test", nil,
 		"/bin/ip",
 		"-j",
 		"link",
 	)
 
-	if err := job.Start(); err != nil {
-		panic(err)
-	}
+	require.Nil(t, job.Start())
+	defer job.Stop()
 
 	var outputBuffer []byte
 
@@ -39,27 +43,16 @@ func runTest() {
 	}
 
 	type iface struct {
-		Ifindex *int    `json:"ifindex,omitempty"`
-		Ifname  *string `json:"ifname,omitempty"`
+		Ifname *string `json:"ifname,omitempty"`
 	}
 	var ifaceList []iface
 
-	if err := json.Unmarshal(outputBuffer, &ifaceList); err != nil {
-		panic(err)
-	}
+	err := json.Unmarshal(outputBuffer, &ifaceList)
+	assert.Nil(t, err)
 
-	if len(ifaceList) != 2 {
-		panic(fmt.Sprintf("Expected 2, found: %d", len(ifaceList)))
-	}
-
-	fmt.Println("Found expected number of network interface in new network namespace (2)")
-}
-
-// Sample run:
-//     Running test to list all network interfaces avaialble to a job
-//     Found expected number of network interface in new network namespace (2)
-
-func main() {
-	fmt.Println("Running test to list all network interfaces avaialble to a job")
-	runTest()
+	require.Equal(t, 2, len(ifaceList))
+	require.NotNil(t, ifaceList[0].Ifname)
+	require.NotNil(t, ifaceList[1].Ifname)
+	assert.Equal(t, "lo", *ifaceList[0].Ifname)
+	assert.Equal(t, "sit0", *ifaceList[1].Ifname)
 }

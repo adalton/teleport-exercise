@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 /*
 Copyright 2021 Andy Dalton
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,45 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package pidnamespace_test
 
 import (
-	"fmt"
 	"strings"
+	"testing"
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func runTest() {
-
+func Test_jobPidIsOne(t *testing.T) {
 	job := jobmanager.NewJob("theOwner", "my-test", nil,
 		"/bin/bash",
 		"-c",
 		"echo $$",
 	)
+	defer job.Stop()
 
-	if err := job.Start(); err != nil {
-		panic(err)
-	}
+	err := job.Start()
+	require.Nil(t, err)
 
 	output := <-job.StdoutStream().Stream()
-	if output == nil {
-		panic("Received nil response")
-	}
+	require.NotNil(t, output)
+
 	outputStr := strings.TrimSpace(string(output))
-
-	if outputStr != "1" {
-		panic("The pid of the process should have been 1, not " + outputStr)
-	}
-
-	fmt.Println(outputStr)
-}
-
-// Sample run:
-//     Determining the job's PID in its namespace
-//     1
-
-func main() {
-	fmt.Println("Determining the job's PID in its namespace")
-	runTest()
+	assert.Equal(t, "1", outputStr)
 }
