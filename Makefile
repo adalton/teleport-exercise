@@ -14,13 +14,16 @@ SHELL = bash
 MKDIR = mkdir -p
 BUILDDIR = build
 COVERAGEDIR=$(BUILDDIR)/coverage
+EXECUTABLES =
+EXECUTABLES += $(BUILDDIR)/cgexec
+EXECUTABLES += $(BUILDDIR)/jobmanager
 
 GOTEST := go test
 ifneq ($(shell which gotestsum),)
 	GOTEST := gotestsum -- 
 endif
 
-all: proto $(BUILDDIR) $(BUILDDIR)/cgexec
+all: proto $(EXECUTABLES)
 
 $(BUILDDIR):
 	$(MKDIR) $(BUILDDIR)
@@ -31,6 +34,9 @@ $(BUILDDIR)/cgexec: GOARCH=amd64
 $(BUILDDIR)/cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build'
 $(BUILDDIR)/cgexec: dep $(BUILDDIR) cmd/cgexec/cgexec.go
 	go build -race -o $(BUILDDIR)/cgexec cmd/cgexec/cgexec.go
+
+$(BUILDDIR)/jobmanager: dep $(BUILDDIR) cmd/server/server.go
+	go build -race -o $(BUILDDIR)/jobmanager cmd/server/server.go
 
 proto:
 	@if ! which protoc > /dev/null; then \
