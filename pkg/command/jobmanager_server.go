@@ -31,7 +31,7 @@ import (
 // on the given address, with the given CA certificate and server certificate
 // and key.
 func RunJobmanagerServer(network, address, caCert, serverCert, serverKey string) error {
-	tc, err := grpcutil.NewTransportCredentials(caCert, serverCert, serverKey)
+	tc, err := grpcutil.NewServerTransportCredentials(caCert, serverCert, serverKey)
 	if err != nil {
 		return err
 	}
