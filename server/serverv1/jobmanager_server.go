@@ -16,16 +16,16 @@ package serverv1
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 	v1 "github.com/adalton/teleport-exercise/service/v1"
+	"github.com/adalton/teleport-exercise/util/grpcutil"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type UserIDContext struct{}
 
 // jobmanagerServer implements the gRPC handler for the jobmanager service.
 type jobmanagerServer struct {
@@ -166,11 +166,12 @@ func (s *jobmanagerServer) StreamOutput(
 // If the userID doesn't exist, returns an error ready to be returned by a
 // gRPC API.
 func (s *jobmanagerServer) userIDFromContext(ctx context.Context) (string, error) {
-	if userID, ok := ctx.Value(&UserIDContext{}).(string); ok && userID != "" {
+	if userID, ok := ctx.Value(&grpcutil.UserIDContext{}).(string); ok && userID != "" {
 		return userID, nil
 	}
 
-	return "", status.Errorf(codes.Unauthenticated, "jobmanager: user unauthenticated")
+	log.Printf("Failed to find object of type grpcutilUserIDContext in context or userID was empty")
+	return "", status.Error(codes.Unauthenticated, "jobmanager: unauthenticated")
 }
 
 // errorToGRPCErrorCode maps the given error to a suitable gRPC error code.
