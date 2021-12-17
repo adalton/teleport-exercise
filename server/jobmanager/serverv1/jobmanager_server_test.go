@@ -19,8 +19,8 @@ import (
 
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager/jobmanagertest"
-	"github.com/adalton/teleport-exercise/server/serverv1"
-	"github.com/adalton/teleport-exercise/server/serverv1/testserverv1"
+	"github.com/adalton/teleport-exercise/server/jobmanager/serverv1"
+	"github.com/adalton/teleport-exercise/server/jobmanager/serverv1/testserverv1"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 	"github.com/google/uuid"

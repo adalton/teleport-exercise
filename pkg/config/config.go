@@ -14,6 +14,7 @@ limitations under the License.
 package config
 
 import (
+	"fmt"
 	"os"
 	"path"
 )
@@ -29,6 +30,12 @@ var (
 
 // init sets CgexecPath based on the position of the current executable
 func init() {
+	if dir, ok := os.LookupEnv("CGEXEC_PATH"); ok {
+		fmt.Println(dir)
+		CgexecPath = dir
+		return
+	}
+
 	const binaryName = "/cgexec"
 
 	exe, err := os.Executable()
@@ -37,15 +44,6 @@ func init() {
 	}
 
 	CgexecPath = path.Dir(exe) + binaryName
-
-	if _, err := os.Stat(CgexecPath); err != nil {
-		// Fallback to a well-known location; this would normally not be in /tmp
-		CgexecPath = "/tmp" + binaryName
-
-		if _, err = os.Stat(CgexecPath); err != nil {
-			panic(err)
-		}
-	}
 }
 
 const (

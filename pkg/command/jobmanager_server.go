@@ -18,7 +18,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/adalton/teleport-exercise/server/serverv1"
+	"github.com/adalton/teleport-exercise/server/jobmanager/serverv1"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 
