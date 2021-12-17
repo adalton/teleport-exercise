@@ -61,23 +61,33 @@ experiment.
 
 * ca.cert.pem 
   The root CA used to sign the valid certs
+
 * badca.cert.pem 
   A root CA that was used to sign none of the certs
+
 * server.cert.pem, server.key.pem 
   A valid server certificate/key pair
+
 * administrator.cert.pem, administrator.key.pem 
   A valid administrator certificate/key pair; userID = client1
+
 * client1.cert.pem, client1.key.pem 
   A valid client certificate/key pair, userID = client1
+
 * client2.cert.pem, client2.key.pem 
   A valid client certificate/key pair, userID = client2
+
 * client3.cert.pem, client3.key.pem 
   A valid client certificate/key pair, userID = client3
+
 * weakclient.cert.pem, weakclient.key.pem 
   A client cert/key pair that is too weak
+
 * weakserver.cert.pem, weakserver.key.pem 
   A server cert/key pair that is too weak
+
 * badclient.cert.pem, badclient.key.pem 
   A client cert/key that was not signed by the included root CA
+
 * badserver.cert.pem, badserver.key.pem 
   A server cert/key that was not signed by the included root CA
