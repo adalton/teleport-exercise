@@ -51,7 +51,7 @@ proto:
 .PHONY: proto
 
 clean:
-	$(RM) -r $(BUILDDIR) ./service/v1/jobmanager_grpc.pb.go  ./service/v1/jobmanager.pb.go
+	$(RM) -r $(BUILDDIR) service/jobmanager/jobmanagerv1/jobmanager_grpc.pb.go service/jobmanager/jobmanagerv1/jobmanager.pb.go
 .PHONY: clean
 
 $(COVERAGEDIR):
