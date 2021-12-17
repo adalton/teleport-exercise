@@ -84,3 +84,17 @@ func Test_ByteStream_MultipleReaders(t *testing.T) {
 	assert.Nil(t, <-stream1)
 	assert.Nil(t, <-stream2)
 }
+
+func Test_ByteStream_ReadFromClosedStream(t *testing.T) {
+	buffer := io.NewMemoryBuffer()
+	bstream := io.NewByteStream(buffer)
+	stream := bstream.Stream()
+
+	buffer.Write([]byte("hello"))
+
+	bstream.Close()
+
+	// Once a ByteStream is closed, the stream should be closed
+	_, ok := <-stream
+	assert.False(t, ok)
+}

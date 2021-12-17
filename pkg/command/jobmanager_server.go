@@ -17,8 +17,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/adalton/teleport-exercise/server/serverv1"
 	v1 "github.com/adalton/teleport-exercise/service/v1"
@@ -30,7 +28,11 @@ import (
 // RunJobmanagerServer runs a JobmanagerServer on the given network, listening
 // on the given address, with the given CA certificate and server certificate
 // and key.
-func RunJobmanagerServer(network, address, caCert, serverCert, serverKey string) error {
+func RunJobmanagerServer(
+	network, address, caCert, serverCert, serverKey string,
+	stopChan <-chan os.Signal,
+
+) error {
 	tc, err := grpcutil.NewServerTransportCredentials(caCert, serverCert, serverKey)
 	if err != nil {
 		return err
@@ -56,10 +58,7 @@ func RunJobmanagerServer(network, address, caCert, serverCert, serverKey string)
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-
-	<-stop
+	<-stopChan
 	grpcServer.GracefulStop()
 
 	return nil

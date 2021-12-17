@@ -60,9 +60,10 @@ test: vet $(COVERAGEDIR)
 .PHONY: test
 
 # Not using $(GOTEST) here since root might not have it installed
+inttest: CERTDIR=$(shell readlink -f certs)
 inttest: vet $(BUILDDIR)/cgexec
 	@cp $(BUILDDIR)/cgexec /tmp
-	@sudo go test -v -race --tags=integration ./test/...
+	@sudo bash -c 'CERTDIR=$(CERTDIR) go test -v -race -count=1 --tags=integration ./test/...'
 .PHONY: inttest
 
 vet: dep

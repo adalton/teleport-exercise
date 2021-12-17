@@ -23,9 +23,21 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// UserIDContext is the type of the key in a context.Context where the
+// userIDContext is the type of the key in a context.Context where the
 // userID is stored.
-type UserIDContext struct{}
+type userIDContext struct{}
+
+// userIDFromContext extracts and returns the userID from the given context.
+// If the userID doesn't exist, returns an error ready to be returned by a
+// gRPC API.
+//
+func GetUserIDFromContext(ctx context.Context) (string, error) {
+	if userID, ok := ctx.Value(&userIDContext{}).(string); ok && userID != "" {
+		return userID, nil
+	}
+
+	return "", status.Error(codes.Unauthenticated, "jobmanager: unauthenticated")
+}
 
 // UnaryGetUserIDFromContextInterceptor extracts the CommonName from the client-
 // supplied certificate, creates a new context.Context with that value using
@@ -86,12 +98,15 @@ func getUserIDFromContext(ctx context.Context) (context.Context, error) {
 		if mtls, ok := p.AuthInfo.(credentials.TLSInfo); ok {
 			for _, item := range mtls.State.PeerCertificates {
 				if item.Subject.CommonName != "" {
-					ctx = context.WithValue(ctx, &UserIDContext{}, item.Subject.CommonName)
-					return ctx, nil
+					return AttachUserIDToContext(ctx, item.Subject.CommonName), nil
 				}
 			}
 		}
 	}
 
 	return nil, status.Error(codes.Unauthenticated, "jobmanager: unauthenticated")
+}
+
+func AttachUserIDToContext(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, &userIDContext{}, userID)
 }

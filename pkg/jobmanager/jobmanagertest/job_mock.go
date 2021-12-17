@@ -15,6 +15,7 @@ package jobmanagertest
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/io"
@@ -82,18 +83,21 @@ func (m *mockJob) StderrStream() *io.ByteStream {
 
 func (m *mockJob) Status() *jobmanager.JobStatus {
 	exitCode := -1
+	signalNumber := syscall.Signal(-1)
 
-	if m.running {
-		exitCode = 0
+	if !m.running {
+		exitCode = 137
+		signalNumber = syscall.SIGKILL
 	}
 
 	return &jobmanager.JobStatus{
-		Owner:    m.owner,
-		Name:     m.name,
-		ID:       m.id.String(),
-		Running:  m.running,
-		Pid:      1234,
-		ExitCode: exitCode,
+		Owner:     m.owner,
+		Name:      m.name,
+		ID:        m.id.String(),
+		Running:   m.running,
+		Pid:       1234,
+		SignalNum: signalNumber,
+		ExitCode:  exitCode,
 	}
 }
 
