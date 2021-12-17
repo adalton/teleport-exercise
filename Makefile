@@ -17,6 +17,7 @@ COVERAGEDIR=$(BUILDDIR)/coverage
 EXECUTABLES =
 EXECUTABLES += $(BUILDDIR)/cgexec
 EXECUTABLES += $(BUILDDIR)/jobmanager
+EXECUTABLES += $(BUILDDIR)/jobctl
 
 GOTEST := go test
 ifneq ($(shell which gotestsum),)
@@ -37,6 +38,9 @@ $(BUILDDIR)/cgexec: dep $(BUILDDIR) cmd/cgexec/cgexec.go
 
 $(BUILDDIR)/jobmanager: dep $(BUILDDIR) cmd/server/server.go
 	go build -race -o $(BUILDDIR)/jobmanager cmd/server/server.go
+
+$(BUILDDIR)/jobctl: dep $(BUILDDIR) cmd/client/client.go
+	go build -race -o $(BUILDDIR)/jobctl cmd/client/client.go
 
 proto:
 	@if ! which protoc > /dev/null; then \
