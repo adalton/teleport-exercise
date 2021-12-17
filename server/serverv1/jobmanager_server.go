@@ -19,7 +19,7 @@ import (
 
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
-	v1 "github.com/adalton/teleport-exercise/service/v1"
+	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 
 	"google.golang.org/grpc/codes"
@@ -28,7 +28,7 @@ import (
 
 // jobmanagerServer implements the gRPC handler for the jobmanager service.
 type jobmanagerServer struct {
-	v1.UnimplementedJobManagerServer
+	jobmanagerv1.UnimplementedJobManagerServer
 	jm *jobmanager.Manager
 }
 
@@ -45,7 +45,7 @@ func NewJobManagerServerDetailed(manager *jobmanager.Manager) *jobmanagerServer 
 	}
 }
 
-func (s *jobmanagerServer) Start(ctx context.Context, jcr *v1.JobCreationRequest) (*v1.Job, error) {
+func (s *jobmanagerServer) Start(ctx context.Context, jcr *jobmanagerv1.JobCreationRequest) (*jobmanagerv1.Job, error) {
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -56,15 +56,15 @@ func (s *jobmanagerServer) Start(ctx context.Context, jcr *v1.JobCreationRequest
 		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
 
-	jobResponse := &v1.Job{
-		Id:   &v1.JobID{Id: job.ID().String()},
+	jobResponse := &jobmanagerv1.Job{
+		Id:   &jobmanagerv1.JobID{Id: job.ID().String()},
 		Name: job.Name(),
 	}
 
 	return jobResponse, nil
 }
 
-func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *v1.JobID) (*v1.NilMessage, error) {
+func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *jobmanagerv1.JobID) (*jobmanagerv1.NilMessage, error) {
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -75,19 +75,19 @@ func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *v1.JobID) (*v
 		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
 
-	return &v1.NilMessage{}, nil
+	return &jobmanagerv1.NilMessage{}, nil
 }
 
-func internalToExternalStatusV1(internalStatus *jobmanager.JobStatus) *v1.JobStatus {
+func internalToExternalStatusV1(internalStatus *jobmanager.JobStatus) *jobmanagerv1.JobStatus {
 	errMsg := ""
 
 	if internalStatus.RunError != nil {
 		errMsg = internalStatus.RunError.Error()
 	}
 
-	return &v1.JobStatus{
-		Job: &v1.Job{
-			Id: &v1.JobID{
+	return &jobmanagerv1.JobStatus{
+		Job: &jobmanagerv1.Job{
+			Id: &jobmanagerv1.JobID{
 				Id: internalStatus.ID,
 			},
 			Name: internalStatus.Name,
@@ -101,7 +101,7 @@ func internalToExternalStatusV1(internalStatus *jobmanager.JobStatus) *v1.JobSta
 	}
 }
 
-func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *v1.JobID) (*v1.JobStatus, error) {
+func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *jobmanagerv1.JobID) (*jobmanagerv1.JobStatus, error) {
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *v1.JobID) (*
 	return internalToExternalStatusV1(jobStatus), nil
 }
 
-func (s *jobmanagerServer) List(ctx context.Context, _ *v1.NilMessage) (*v1.JobStatusList, error) {
+func (s *jobmanagerServer) List(ctx context.Context, _ *jobmanagerv1.NilMessage) (*jobmanagerv1.JobStatusList, error) {
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -123,8 +123,8 @@ func (s *jobmanagerServer) List(ctx context.Context, _ *v1.NilMessage) (*v1.JobS
 
 	statusList := s.jm.List(userID)
 
-	responseStatusList := &v1.JobStatusList{
-		JobStatusList: make([]*v1.JobStatus, 0, len(statusList)),
+	responseStatusList := &jobmanagerv1.JobStatusList{
+		JobStatusList: make([]*jobmanagerv1.JobStatus, 0, len(statusList)),
 	}
 
 	for _, status := range statusList {
@@ -136,8 +136,8 @@ func (s *jobmanagerServer) List(ctx context.Context, _ *v1.NilMessage) (*v1.JobS
 }
 
 func (s *jobmanagerServer) StreamOutput(
-	request *v1.StreamOutputRequest,
-	response v1.JobManager_StreamOutputServer,
+	request *jobmanagerv1.StreamOutputRequest,
+	response jobmanagerv1.JobManager_StreamOutputServer,
 ) error {
 
 	userID, err := grpcutil.GetUserIDFromContext(response.Context())
@@ -148,10 +148,10 @@ func (s *jobmanagerServer) StreamOutput(
 	var byteStream *io.ByteStream
 
 	switch streamType := request.GetOutputStream(); streamType {
-	case v1.OutputStream_STDOUT:
+	case jobmanagerv1.OutputStream_STDOUT:
 		byteStream, err = s.jm.StdoutStream(userID, request.JobID.Id)
 
-	case v1.OutputStream_STDERR:
+	case jobmanagerv1.OutputStream_STDERR:
 		byteStream, err = s.jm.StderrStream(userID, request.JobID.Id)
 
 	default:
@@ -176,7 +176,7 @@ func (s *jobmanagerServer) StreamOutput(
 			if !ok {
 				return nil
 			}
-			response.Send(&v1.JobOutput{Output: data})
+			response.Send(&jobmanagerv1.JobOutput{Output: data})
 		}
 	}
 }

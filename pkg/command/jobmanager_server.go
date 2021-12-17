@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/adalton/teleport-exercise/server/serverv1"
-	v1 "github.com/adalton/teleport-exercise/service/v1"
+	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 
 	"google.golang.org/grpc"
@@ -44,7 +44,7 @@ func RunJobmanagerServer(
 		grpc.StreamInterceptor(grpcutil.StreamGetUserIDFromContextInterceptor),
 	)
 
-	v1.RegisterJobManagerServer(grpcServer, serverv1.NewJobmanagerServer())
+	jobmanagerv1.RegisterJobManagerServer(grpcServer, serverv1.NewJobmanagerServer())
 
 	go func() {
 		l, err := net.Listen(network, address)

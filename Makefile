@@ -47,7 +47,7 @@ proto:
 		echo "error: protoc not installed" >&2; \
 		exit 1; \
 	fi
-	protoc --proto_path=./service/v1/ --go_out=./service/v1 --go_opt=paths=source_relative --go-grpc_out=./service/v1 --go-grpc_opt=paths=source_relative ./service/v1/jobmanager.proto
+	protoc --proto_path=./service/jobmanager/jobmanagerv1/ --go_out=./service/jobmanager/jobmanagerv1 --go_opt=paths=source_relative --go-grpc_out=./service/jobmanager/jobmanagerv1 --go-grpc_opt=paths=source_relative ./service/jobmanager/jobmanagerv1/jobmanager.proto
 .PHONY: proto
 
 clean:

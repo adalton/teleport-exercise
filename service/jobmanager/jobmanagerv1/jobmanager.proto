@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/adalton/teleport-exercise/service/v1";
+option go_package = "github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1";
 
 // The jobmanager.v1 package includes the API for the first major
 // version of the JobManager API.  This API can be extended with

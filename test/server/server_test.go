@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/adalton/teleport-exercise/pkg/command"
-	v1 "github.com/adalton/teleport-exercise/service/v1"
+	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 	"google.golang.org/grpc"
 
@@ -81,11 +81,11 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 
@@ -126,11 +126,11 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
@@ -172,11 +172,11 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
@@ -218,11 +218,11 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
@@ -264,11 +264,11 @@ func Test_clientServer_Success(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
 

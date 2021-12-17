@@ -24,7 +24,7 @@ import (
 	"os"
 	"time"
 
-	v1 "github.com/adalton/teleport-exercise/service/v1"
+	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 
 	"google.golang.org/grpc"
@@ -106,11 +106,11 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	switch os.Args[1] {
 	case "start":
-		req := &v1.JobCreationRequest{
+		req := &jobmanagerv1.JobCreationRequest{
 			Name:        os.Args[2],
 			ProgramPath: os.Args[3],
 			Arguments:   os.Args[4:],
@@ -133,7 +133,7 @@ func main() {
 		defer cancel()
 
 		operationDone := timeOperation("Stop")
-		_, err = client.Stop(ctx, &v1.JobID{Id: os.Args[2]})
+		_, err = client.Stop(ctx, &jobmanagerv1.JobID{Id: os.Args[2]})
 		operationDone()
 		if err != nil {
 			panic(err)
@@ -144,7 +144,7 @@ func main() {
 		defer cancel()
 
 		operationDone := timeOperation("Query")
-		jobStatus, err := client.Query(ctx, &v1.JobID{Id: os.Args[2]})
+		jobStatus, err := client.Query(ctx, &jobmanagerv1.JobID{Id: os.Args[2]})
 		operationDone()
 		if err != nil {
 			panic(err)
@@ -156,7 +156,7 @@ func main() {
 		defer cancel()
 
 		operationDone := timeOperation("Query")
-		statusList, err := client.List(ctx, &v1.NilMessage{})
+		statusList, err := client.List(ctx, &jobmanagerv1.NilMessage{})
 		operationDone()
 		if err != nil {
 			panic(err)
@@ -164,19 +164,19 @@ func main() {
 		fmt.Printf("%+v\n", statusList)
 
 	case "stdout", "stderr":
-		var streamID v1.OutputStream
+		var streamID jobmanagerv1.OutputStream
 
 		if os.Args[1] == "stdout" {
-			streamID = v1.OutputStream_STDOUT
+			streamID = jobmanagerv1.OutputStream_STDOUT
 		} else {
-			streamID = v1.OutputStream_STDERR
+			streamID = jobmanagerv1.OutputStream_STDERR
 		}
 
 		ctx, cancel := streamContext()
 		defer cancel()
 
-		stream, err := client.StreamOutput(ctx, &v1.StreamOutputRequest{
-			JobID:        &v1.JobID{Id: os.Args[2]},
+		stream, err := client.StreamOutput(ctx, &jobmanagerv1.StreamOutputRequest{
+			JobID:        &jobmanagerv1.JobID{Id: os.Args[2]},
 			OutputStream: streamID,
 		})
 		if err != nil {
