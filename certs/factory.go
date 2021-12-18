@@ -34,23 +34,6 @@ var clientCertMap = map[string]certKeyPair{
 	},
 }
 
-/*
-var serverCertMap = map[string]certKeyPair{
-	"badserver": {
-		cert: BadServerCert,
-		key:  BadServerKey,
-	},
-	"server": {
-		cert: ServerCert,
-		key:  ServerKey,
-	},
-	"weakserver": {
-		cert: WeakServerCert,
-		key:  WeakServerKey,
-	},
-}
-*/
-
 func ClientFactory(userID string) (cert, key []byte, err error) {
 	if _, exists := clientCertMap[userID]; !exists {
 		return nil, nil, fmt.Errorf("no client cert exists for userID '%s'", userID)
@@ -61,26 +44,3 @@ func ClientFactory(userID string) (cert, key []byte, err error) {
 
 	return
 }
-
-/*
-func ServertCertFactory(name string) ([]byte, error) {
-	if _, exists := serverCertMap[name]; !exists {
-		return nil, fmt.Errorf("no server cert exists for name '%s'", name)
-	}
-
-	return serverCertMap[name].cert, nil
-}
-
-func ServertKeyFactory(name string) ([]byte, error) {
-	if _, exists := serverCertMap[name]; !exists {
-		return nil, fmt.Errorf("no server key exists for name '%s'", name)
-	}
-
-	return serverCertMap[name].key, nil
-}
-*/
-
-/*
-badca.cert.pem
-ca.cert.pem
-*/
