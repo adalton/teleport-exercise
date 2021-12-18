@@ -26,7 +26,6 @@ import (
 
 	"github.com/adalton/teleport-exercise/certs"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
-	"github.com/adalton/teleport-exercise/util/grpcutil"
 
 	"google.golang.org/grpc"
 )
@@ -97,7 +96,7 @@ func main() {
 		panic(err)
 	}
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		clientCert,
 		clientKey,

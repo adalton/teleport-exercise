@@ -11,12 +11,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package grpcutil
+package certs
 
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
+	"errors"
 
 	"google.golang.org/grpc/credentials"
 )
@@ -45,7 +45,7 @@ func newTransportCredentials(caCert, cert, key []byte, isServer bool) (credentia
 
 	capool := x509.NewCertPool()
 	if !capool.AppendCertsFromPEM(caCert) {
-		return nil, fmt.Errorf("cannot append ca cert to ca pool")
+		return nil, errors.New("cannot append ca cert to ca pool")
 	}
 
 	tlsConfig := &tls.Config{

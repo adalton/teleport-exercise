@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package grpcutil
+package serverv1
 
 import (
 	"context"
@@ -34,11 +34,14 @@ type userIDContext struct{}
 // gRPC API.
 //
 func GetUserIDFromContext(ctx context.Context) (string, error) {
-	if userID, ok := ctx.Value(&userIDContext{}).(string); ok && userID != "" {
-		return userID, nil
+
+	userID, ok := ctx.Value(&userIDContext{}).(string)
+
+	if !ok || userID == "" {
+		return "", jobmanager.Unauthenticated
 	}
 
-	return "", jobmanager.Unauthenticated
+	return userID, nil
 }
 
 // UnaryGetUserIDFromContextInterceptor extracts the CommonName from the client-

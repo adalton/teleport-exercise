@@ -1,4 +1,5 @@
 /*
+ *
 Copyright 2021 Andy Dalton
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,9 +19,9 @@ import (
 	"log"
 	"net"
 
+	"github.com/adalton/teleport-exercise/certs"
 	"github.com/adalton/teleport-exercise/server/jobmanager/serverv1"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
-	"github.com/adalton/teleport-exercise/util/grpcutil"
 
 	"google.golang.org/grpc"
 )
@@ -33,15 +34,15 @@ func RunJobmanagerServer(
 	listener net.Listener,
 	caCert, serverCert, serverKey []byte,
 ) error {
-	tc, err := grpcutil.NewServerTransportCredentials(caCert, serverCert, serverKey)
+	tc, err := certs.NewServerTransportCredentials(caCert, serverCert, serverKey)
 	if err != nil {
 		return err
 	}
 
 	grpcServer := grpc.NewServer(
 		grpc.Creds(tc),
-		grpc.UnaryInterceptor(grpcutil.UnaryGetUserIDFromContextInterceptor),
-		grpc.StreamInterceptor(grpcutil.StreamGetUserIDFromContextInterceptor),
+		grpc.UnaryInterceptor(serverv1.UnaryGetUserIDFromContextInterceptor),
+		grpc.StreamInterceptor(serverv1.StreamGetUserIDFromContextInterceptor),
 	)
 
 	jobmanagerv1.RegisterJobManagerServer(grpcServer, serverv1.NewJobmanagerServer())
