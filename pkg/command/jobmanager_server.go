@@ -47,20 +47,28 @@ func RunJobmanagerServer(
 
 	jobmanagerv1.RegisterJobManagerServer(grpcServer, serverv1.NewJobmanagerServer())
 
+	errChan := make(chan error)
+
 	go func() {
 		l, err := net.Listen(network, address)
 		if err != nil {
-			panic(err)
+			errChan <- err
+			return
 		}
 
 		log.Println("Server ready.")
 		if err := grpcServer.Serve(l); err != nil {
-			panic(err)
+			errChan <- err
+			return
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case <-ctx.Done():
+	case err = <-errChan:
+	}
+
 	grpcServer.GracefulStop()
 
-	return nil
+	return err
 }
