@@ -26,7 +26,6 @@ import (
 
 	"github.com/adalton/teleport-exercise/certs"
 	"github.com/adalton/teleport-exercise/pkg/command"
-	"github.com/adalton/teleport-exercise/server/jobmanager/serverv1"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 
 	"github.com/stretchr/testify/assert"
@@ -87,10 +86,7 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	defer conn.Close()
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
-
-	opCtx := serverv1.AttachUserIDToContext(context.Background(), "user1")
-
-	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 	s, ok := status.FromError(err)
@@ -121,10 +117,7 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	defer conn.Close()
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
-
-	opCtx := serverv1.AttachUserIDToContext(context.Background(), "user1")
-
-	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 
@@ -156,10 +149,7 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	defer conn.Close()
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
-
-	opCtx := serverv1.AttachUserIDToContext(context.Background(), "weakclient")
-
-	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 	s, ok := status.FromError(err)
@@ -190,10 +180,7 @@ func Test_clientServer_Success(t *testing.T) {
 	defer conn.Close()
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
-
-	opCtx := serverv1.AttachUserIDToContext(context.Background(), "user1")
-
-	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
 
@@ -201,6 +188,102 @@ func Test_clientServer_Success(t *testing.T) {
 	wg.Wait()
 }
 
+func Test_clientServer_Multitenant(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	require.Nil(t, err)
+
+	tcClient1, err := certs.NewClientTransportCredentials(
+		certs.CACert,
+		certs.Client1Cert,
+		certs.Client1Key,
+	)
+	require.Nil(t, err)
+
+	connClient1, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient1))
+	require.Nil(t, err)
+	defer connClient1.Close()
+
+	client := jobmanagerv1.NewJobManagerClient(connClient1)
+	_, err = client.Start(context.Background(), &jobmanagerv1.JobCreationRequest{
+		Name:        "myjob",
+		ProgramPath: "/bin/true",
+	})
+	assert.Nil(t, err)
+
+	tcClient2, err := certs.NewClientTransportCredentials(
+		certs.CACert,
+		certs.Client2Cert,
+		certs.Client2Key,
+	)
+	require.Nil(t, err)
+
+	connClient2, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient2))
+	require.Nil(t, err)
+	defer connClient2.Close()
+
+	client2 := jobmanagerv1.NewJobManagerClient(connClient2)
+	jobList, err := client2.List(context.Background(), &jobmanagerv1.NilMessage{})
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(jobList.JobStatusList))
+
+	cancel()
+	wg.Wait()
+}
+
+func Test_clientServer_AdministratorCanSeeAllJobs(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	require.Nil(t, err)
+
+	tcClient1, err := certs.NewClientTransportCredentials(
+		certs.CACert,
+		certs.Client1Cert,
+		certs.Client1Key,
+	)
+	require.Nil(t, err)
+
+	connClient1, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient1))
+	require.Nil(t, err)
+	defer connClient1.Close()
+
+	client := jobmanagerv1.NewJobManagerClient(connClient1)
+	_, err = client.Start(context.Background(), &jobmanagerv1.JobCreationRequest{
+		Name:        "myjob",
+		ProgramPath: "/bin/true",
+	})
+	assert.Nil(t, err)
+
+	tcClient2, err := certs.NewClientTransportCredentials(
+		certs.CACert,
+		certs.AdministratorCert,
+		certs.AdministratorKey,
+	)
+	require.Nil(t, err)
+
+	connClient2, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient2))
+	require.Nil(t, err)
+	defer connClient2.Close()
+
+	client2 := jobmanagerv1.NewJobManagerClient(connClient2)
+	jobList, err := client2.List(context.Background(), &jobmanagerv1.NilMessage{})
+
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(jobList.JobStatusList))
+
+	cancel()
+	wg.Wait()
+}
+
+// getPort returns the port portion of a address in the form "<address>:<port>"
+// It returns an error if there's no port
 func getPort(address string) (string, error) {
 	tokens := strings.Split(address, ":")
 	if len(tokens) == 0 {
