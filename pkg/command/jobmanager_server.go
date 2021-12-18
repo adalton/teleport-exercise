@@ -29,7 +29,8 @@ import (
 // on the given address, with the given CA certificate and server certificate
 // and key.
 func RunJobmanagerServer(
-	network, address, caCert, serverCert, serverKey string,
+	network, address string,
+	caCert, serverCert, serverKey []byte,
 	stopChan <-chan os.Signal,
 
 ) error {

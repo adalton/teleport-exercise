@@ -24,6 +24,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/adalton/teleport-exercise/certs"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
 
@@ -91,10 +92,15 @@ func main() {
 
 	fmt.Println("User:", user)
 
+	clientCert, clientKey, err := certs.ClientFactory(user)
+	if err != nil {
+		panic(err)
+	}
+
 	tc, err := grpcutil.NewClientTransportCredentials(
-		"./certs/ca.cert.pem",
-		fmt.Sprintf("./certs/%s.cert.pem", user),
-		fmt.Sprintf("./certs/%s.key.pem", user),
+		certs.CACert,
+		clientCert,
+		clientKey,
 	)
 	if err != nil {
 		panic(err)

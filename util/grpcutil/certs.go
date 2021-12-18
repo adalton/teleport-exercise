@@ -17,7 +17,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 
 	"google.golang.org/grpc/credentials"
 )
@@ -25,7 +24,7 @@ import (
 // NewServerTransportCredentials creates an returns a new
 // credentials.TransportCredentials using the given certificate information
 // with a strong TLS server configuration.
-func NewServerTransportCredentials(caCert, cert, key string) (credentials.TransportCredentials, error) {
+func NewServerTransportCredentials(caCert, cert, key []byte) (credentials.TransportCredentials, error) {
 	const isServer = true
 	return newTransportCredentials(caCert, cert, key, isServer)
 }
@@ -33,24 +32,19 @@ func NewServerTransportCredentials(caCert, cert, key string) (credentials.Transp
 // NewClientTransportCredentials creates an returns a new
 // credentials.TransportCredentials using the given certificate information
 // with a strong TLS client configuration.
-func NewClientTransportCredentials(caCert, cert, key string) (credentials.TransportCredentials, error) {
+func NewClientTransportCredentials(caCert, cert, key []byte) (credentials.TransportCredentials, error) {
 	const isServer = false
 	return newTransportCredentials(caCert, cert, key, isServer)
 }
 
-func newTransportCredentials(caCert, cert, key string, isServer bool) (credentials.TransportCredentials, error) {
-	certificate, err := tls.LoadX509KeyPair(cert, key)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := ioutil.ReadFile(caCert)
+func newTransportCredentials(caCert, cert, key []byte, isServer bool) (credentials.TransportCredentials, error) {
+	certificate, err := tls.X509KeyPair(cert, key)
 	if err != nil {
 		return nil, err
 	}
 
 	capool := x509.NewCertPool()
-	if !capool.AppendCertsFromPEM(data) {
+	if !capool.AppendCertsFromPEM(caCert) {
 		return nil, fmt.Errorf("cannot append ca cert to ca pool")
 	}
 

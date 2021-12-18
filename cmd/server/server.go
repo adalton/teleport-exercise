@@ -18,6 +18,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/adalton/teleport-exercise/certs"
 	"github.com/adalton/teleport-exercise/pkg/command"
 )
 
@@ -28,9 +29,9 @@ func main() {
 	err := command.RunJobmanagerServer(
 		"tcp",
 		":24482",
-		"certs/ca.cert.pem",
-		"certs/server.cert.pem",
-		"certs/server.key.pem",
+		certs.CACert,
+		certs.ServerCert,
+		certs.ServerKey,
 		stop,
 	)
 	if err != nil {
