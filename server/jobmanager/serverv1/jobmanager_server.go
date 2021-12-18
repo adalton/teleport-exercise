@@ -186,11 +186,11 @@ func (s *jobmanagerServer) StreamOutput(
 func errorToGRPCErrorCode(err error) codes.Code {
 	code := codes.Internal
 
-	if errors.Is(err, &jobmanager.JobExistsError{}) {
+	if errors.Is(err, jobmanager.JobExistsError) {
 		code = codes.AlreadyExists
-	} else if errors.Is(err, &jobmanager.JobNotFoundError{}) {
+	} else if errors.Is(err, jobmanager.JobNotFoundError) {
 		code = codes.NotFound
-	} else if errors.Is(err, &jobmanager.InvalidJobID{}) {
+	} else if errors.Is(err, jobmanager.InvalidJobIDError) {
 		code = codes.InvalidArgument
 	}
 

@@ -105,7 +105,7 @@ func (m *Manager) Start(userID, jobName, programPath string, arguments []string)
 	}
 
 	if _, exists := m.jobsByUserByJobName[userID][jobName]; exists {
-		return nil, NewJobExistsError(jobName)
+		return nil, JobExistsError
 	}
 
 	job := m.jobConstructor(userID, jobName, m.controllers, programPath, arguments...)
@@ -229,14 +229,14 @@ func (m *Manager) findJobByUser(userID, jobID string) (Job, error) {
 		}
 	}
 
-	return nil, NewJobNotFoundError(jobID)
+	return nil, JobNotFoundError
 }
 
 // validateJobID ensures that the given jobID is in the supported format.
 // If it is not, it returns an InvalidJobID error.
 func validateJobID(jobID string) error {
 	if _, err := uuid.Parse(jobID); err != nil {
-		return NewInvalidJobID(jobID)
+		return InvalidJobIDError
 	}
 
 	return nil
