@@ -30,9 +30,8 @@ import (
 // and key.
 func RunJobmanagerServer(
 	ctx context.Context,
-	network, address string,
+	listener net.Listener,
 	caCert, serverCert, serverKey []byte,
-
 ) error {
 	tc, err := grpcutil.NewServerTransportCredentials(caCert, serverCert, serverKey)
 	if err != nil {
@@ -50,14 +49,8 @@ func RunJobmanagerServer(
 	errChan := make(chan error)
 
 	go func() {
-		l, err := net.Listen(network, address)
-		if err != nil {
-			errChan <- err
-			return
-		}
-
 		log.Println("Server ready.")
-		if err := grpcServer.Serve(l); err != nil {
+		if err := grpcServer.Serve(listener); err != nil {
 			errChan <- err
 			return
 		}

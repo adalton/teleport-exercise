@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"os/signal"
 	"syscall"
 
@@ -26,14 +27,19 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	err := command.RunJobmanagerServer(
+	listener, err := net.Listen("tcp", ":24482")
+	if err != nil {
+		panic(err)
+	}
+
+	err = command.RunJobmanagerServer(
 		ctx,
-		"tcp",
-		":24482",
+		listener,
 		certs.CACert,
 		certs.ServerCert,
 		certs.ServerKey,
 	)
+
 	if err != nil {
 		panic(err)
 	}
