@@ -82,10 +82,7 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	defer conn.Close()
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
-
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
-
-	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 
@@ -201,52 +198,6 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 			certDir+"/ca.cert.pem",
 			certDir+"/server.cert.pem",
 			certDir+"/server.key.pem",
-			stop)
-		wg.Done()
-	}()
-
-	waitForServer()
-
-	tc, err := grpcutil.NewClientTransportCredentials(
-		certDir+"/ca.cert.pem",
-		certDir+"/weakclient.cert.pem",
-		certDir+"/weakclient.key.pem",
-	)
-	require.Nil(t, err)
-
-	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
-	require.Nil(t, err)
-	defer conn.Close()
-
-	client := jobmanagerv1.NewJobManagerClient(conn)
-
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
-
-	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
-
-	fmt.Println(err)
-	assert.Error(t, err)
-
-	stop <- os.Kill
-	wg.Wait()
-}
-
-func Test_clientServer_TooWeakServerAndClientCert(t *testing.T) {
-	if certDir == "" {
-		t.Skip("Skipping test, CERTDIR not set")
-	}
-
-	stop := make(chan os.Signal, 1)
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		_ = command.RunJobmanagerServer(
-			"tcp",
-			":12345",
-			certDir+"/ca.cert.pem",
-			certDir+"/weakserver.cert.pem",
-			certDir+"/weakserver.key.pem",
 			stop)
 		wg.Done()
 	}()
