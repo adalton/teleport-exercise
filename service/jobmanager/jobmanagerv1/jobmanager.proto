@@ -115,12 +115,15 @@ message JobStatusList {
 // The OutputStream enumeration captures the set of output stream
 // the JobManager can stream from the process.
 enum OutputStream {
+    // The unset value
+    UNSET = 0;
+
     // Stream the process’ standard output stream
-    STDOUT = 0;
+    STDOUT = 1;
 
 
     // Stream the process’ standard error stream
-    STDERR = 1;
+    STDERR = 2;
 }
 
 // The StreamOutputRequest message is used to request that the service
