@@ -15,15 +15,11 @@ package serverv1
 
 import (
 	"context"
-	"errors"
 
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 	"github.com/adalton/teleport-exercise/service/jobmanager/jobmanagerv1"
 	"github.com/adalton/teleport-exercise/util/grpcutil"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // jobmanagerServer implements the gRPC handler for the jobmanager service.
@@ -45,7 +41,11 @@ func NewJobManagerServerDetailed(manager *jobmanager.Manager) *jobmanagerServer 
 	}
 }
 
-func (s *jobmanagerServer) Start(ctx context.Context, jcr *jobmanagerv1.JobCreationRequest) (*jobmanagerv1.Job, error) {
+func (s *jobmanagerServer) Start(
+	ctx context.Context,
+	jcr *jobmanagerv1.JobCreationRequest,
+) (*jobmanagerv1.Job, error) {
+
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (s *jobmanagerServer) Start(ctx context.Context, jcr *jobmanagerv1.JobCreat
 
 	job, err := s.jm.Start(userID, jcr.GetName(), jcr.GetProgramPath(), jcr.GetArguments())
 	if err != nil {
-		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
+		return nil, err
 	}
 
 	jobResponse := &jobmanagerv1.Job{
@@ -64,7 +64,11 @@ func (s *jobmanagerServer) Start(ctx context.Context, jcr *jobmanagerv1.JobCreat
 	return jobResponse, nil
 }
 
-func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *jobmanagerv1.JobID) (*jobmanagerv1.NilMessage, error) {
+func (s *jobmanagerServer) Stop(
+	ctx context.Context,
+	requestJobID *jobmanagerv1.JobID,
+) (*jobmanagerv1.NilMessage, error) {
+
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -72,7 +76,7 @@ func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *jobmanagerv1.
 
 	err = s.jm.Stop(userID, requestJobID.Id)
 	if err != nil {
-		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
+		return nil, err
 	}
 
 	return &jobmanagerv1.NilMessage{}, nil
@@ -101,7 +105,11 @@ func internalToExternalStatusV1(internalStatus *jobmanager.JobStatus) *jobmanage
 	}
 }
 
-func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *jobmanagerv1.JobID) (*jobmanagerv1.JobStatus, error) {
+func (s *jobmanagerServer) Query(
+	ctx context.Context,
+	requestJobID *jobmanagerv1.JobID,
+) (*jobmanagerv1.JobStatus, error) {
+
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -109,13 +117,17 @@ func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *jobmanagerv1
 
 	jobStatus, err := s.jm.Status(userID, requestJobID.Id)
 	if err != nil {
-		return nil, status.Errorf(errorToGRPCErrorCode(err), err.Error())
+		return nil, err
 	}
 
 	return internalToExternalStatusV1(jobStatus), nil
 }
 
-func (s *jobmanagerServer) List(ctx context.Context, _ *jobmanagerv1.NilMessage) (*jobmanagerv1.JobStatusList, error) {
+func (s *jobmanagerServer) List(
+	ctx context.Context,
+	_ *jobmanagerv1.NilMessage,
+) (*jobmanagerv1.JobStatusList, error) {
+
 	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -155,11 +167,11 @@ func (s *jobmanagerServer) StreamOutput(
 		byteStream, err = s.jm.StderrStream(userID, request.JobID.Id)
 
 	default:
-		return status.Errorf(codes.InvalidArgument, "jobmanager: unsupported stream: %v", streamType)
+		return jobmanager.InvalidArgument
 	}
 
 	if err != nil {
-		return status.Errorf(errorToGRPCErrorCode(err), err.Error())
+		return err
 	}
 	defer byteStream.Close()
 
@@ -170,7 +182,7 @@ func (s *jobmanagerServer) StreamOutput(
 		// might develop a client for it that does want to set a deadline.
 		// This will support that.
 		case <-response.Context().Done():
-			return status.Errorf(codes.DeadlineExceeded, "jobManager: deadline exceeded")
+			return context.DeadlineExceeded
 
 		case data, ok := <-byteStream.Stream():
 			if !ok {
@@ -179,20 +191,4 @@ func (s *jobmanagerServer) StreamOutput(
 			response.Send(&jobmanagerv1.JobOutput{Output: data})
 		}
 	}
-}
-
-// errorToGRPCErrorCode maps the given error to a suitable gRPC error code.
-// If no mapping is found, it will return codes.Internal.
-func errorToGRPCErrorCode(err error) codes.Code {
-	code := codes.Internal
-
-	if errors.Is(err, jobmanager.JobExistsError) {
-		code = codes.AlreadyExists
-	} else if errors.Is(err, jobmanager.JobNotFoundError) {
-		code = codes.NotFound
-	} else if errors.Is(err, jobmanager.InvalidJobIDError) {
-		code = codes.InvalidArgument
-	}
-
-	return code
 }

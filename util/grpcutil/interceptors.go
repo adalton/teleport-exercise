@@ -15,7 +15,9 @@ package grpcutil
 
 import (
 	"context"
+	"errors"
 
+	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -36,7 +38,7 @@ func GetUserIDFromContext(ctx context.Context) (string, error) {
 		return userID, nil
 	}
 
-	return "", status.Error(codes.Unauthenticated, "jobmanager: unauthenticated")
+	return "", jobmanager.Unauthenticated
 }
 
 // UnaryGetUserIDFromContextInterceptor extracts the CommonName from the client-
@@ -49,12 +51,17 @@ func UnaryGetUserIDFromContextInterceptor(
 	handler grpc.UnaryHandler,
 ) (resp interface{}, err error) {
 
-	ctx, err = getUserIDFromContext(ctx)
+	ctx, err = getUserIDFromCommonName(ctx)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Unauthenticated, "jobmanager: unauthenticated")
 	}
 
-	return handler(ctx, req)
+	resp, err = handler(ctx, req)
+	if err != nil {
+		err = status.Errorf(errorToGRPCErrorCode(err), err.Error())
+	}
+
+	return
 }
 
 // streamWrapper is a wrapper over a grpc.ServerStream that enables us to
@@ -68,7 +75,7 @@ type streamWrapper struct {
 func (s *streamWrapper) Context() context.Context {
 	ctx := s.ServerStream.Context()
 
-	newCtx, err := getUserIDFromContext(ctx)
+	newCtx, err := getUserIDFromCommonName(ctx)
 	if err != nil {
 		return ctx
 	}
@@ -87,13 +94,18 @@ func StreamGetUserIDFromContextInterceptor(
 	handler grpc.StreamHandler,
 ) error {
 
-	return handler(srv, &streamWrapper{ServerStream: ss})
+	err := handler(srv, &streamWrapper{ServerStream: ss})
+	if err != nil {
+		return status.Errorf(errorToGRPCErrorCode(err), err.Error())
+	}
+
+	return nil
 }
 
-// getUserIDFromContext searches the client-supplied certificates associated
+// getUserIDFromCommonName searches the client-supplied certificates associated
 // with the given ctx, extracts the CommonName, creates a new context,
 // attaches the CommonName as a new value, and returns the new context.
-func getUserIDFromContext(ctx context.Context) (context.Context, error) {
+func getUserIDFromCommonName(ctx context.Context) (context.Context, error) {
 	if p, ok := peer.FromContext(ctx); ok {
 		if mtls, ok := p.AuthInfo.(credentials.TLSInfo); ok {
 			for _, item := range mtls.State.PeerCertificates {
@@ -109,4 +121,26 @@ func getUserIDFromContext(ctx context.Context) (context.Context, error) {
 
 func AttachUserIDToContext(ctx context.Context, userID string) context.Context {
 	return context.WithValue(ctx, &userIDContext{}, userID)
+}
+
+// errorToGRPCErrorCode maps the given error to a suitable gRPC error code.
+// If no mapping is found, it will return codes.Internal.
+func errorToGRPCErrorCode(err error) codes.Code {
+	code := codes.Internal
+
+	if errors.Is(err, jobmanager.JobExistsError) {
+		code = codes.AlreadyExists
+	} else if errors.Is(err, jobmanager.JobNotFoundError) {
+		code = codes.NotFound
+	} else if errors.Is(err, jobmanager.InvalidJobIDError) {
+		code = codes.InvalidArgument
+	} else if errors.Is(err, jobmanager.InvalidArgument) {
+		code = codes.InvalidArgument
+	} else if errors.Is(err, jobmanager.Unauthenticated) {
+		code = codes.Unauthenticated
+	} else if errors.Is(err, context.DeadlineExceeded) {
+		code = codes.DeadlineExceeded
+	}
+
+	return code
 }
