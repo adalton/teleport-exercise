@@ -18,7 +18,6 @@ package server_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -41,18 +40,18 @@ import (
 //         know that the server is up before we try to connect to it.
 
 func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
-	stop := make(chan os.Signal, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		_ = command.RunJobmanagerServer(
+			ctx,
 			"tcp",
 			":12345",
 			certs.CACert,
 			certs.ServerCert,
-			certs.ServerKey,
-			stop)
+			certs.ServerKey)
 		wg.Done()
 	}()
 
@@ -74,23 +73,23 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 
 	assert.Error(t, err)
 
-	stop <- os.Kill
+	cancel()
 	wg.Wait()
 }
 
 func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
-	stop := make(chan os.Signal, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		_ = command.RunJobmanagerServer(
+			ctx,
 			"tcp",
 			":12345",
 			certs.CACert,
 			certs.BadServerCert,
-			certs.BadServerKey,
-			stop)
+			certs.BadServerKey)
 		wg.Done()
 	}()
 
@@ -109,30 +108,30 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
 
-	stop <- os.Kill
+	cancel()
 	wg.Wait()
 }
 
 func Test_clientServer_TooWeakServerCert(t *testing.T) {
-	stop := make(chan os.Signal, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		_ = command.RunJobmanagerServer(
+			ctx,
 			"tcp",
 			":12345",
 			certs.CACert,
 			certs.WeakServerCert,
-			certs.WeakServerKey,
-			stop)
+			certs.WeakServerKey)
 		wg.Done()
 	}()
 
@@ -151,30 +150,30 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
 
-	stop <- os.Kill
+	cancel()
 	wg.Wait()
 }
 
 func Test_clientServer_TooWeakClientCert(t *testing.T) {
-	stop := make(chan os.Signal, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		_ = command.RunJobmanagerServer(
+			ctx,
 			"tcp",
 			":12345",
 			certs.CACert,
 			certs.ServerCert,
-			certs.ServerKey,
-			stop)
+			certs.ServerKey)
 		wg.Done()
 	}()
 
@@ -193,30 +192,30 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
+	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
 
-	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
 
-	stop <- os.Kill
+	cancel()
 	wg.Wait()
 }
 
 func Test_clientServer_Success(t *testing.T) {
-	stop := make(chan os.Signal, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		_ = command.RunJobmanagerServer(
+			ctx,
 			"tcp",
 			":12345",
 			certs.CACert,
 			certs.ServerCert,
-			certs.ServerKey,
-			stop)
+			certs.ServerKey)
 		wg.Done()
 	}()
 
@@ -235,13 +234,13 @@ func Test_clientServer_Success(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
+	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
 
-	stop <- os.Kill
+	cancel()
 	wg.Wait()
 }
 

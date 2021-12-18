@@ -14,7 +14,7 @@ limitations under the License.
 package main
 
 import (
-	"os"
+	"context"
 	"os/signal"
 	"syscall"
 
@@ -23,16 +23,16 @@ import (
 )
 
 func main() {
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	err := command.RunJobmanagerServer(
+		ctx,
 		"tcp",
 		":24482",
 		certs.CACert,
 		certs.ServerCert,
 		certs.ServerKey,
-		stop,
 	)
 	if err != nil {
 		panic(err)
