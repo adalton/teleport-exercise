@@ -38,7 +38,7 @@ func GetUserIDFromContext(ctx context.Context) (string, error) {
 	userID, ok := ctx.Value(&userIDContext{}).(string)
 
 	if !ok || userID == "" {
-		return "", jobmanager.Unauthenticated
+		return "", jobmanager.ErrUnauthenticated
 	}
 
 	return userID, nil
@@ -131,15 +131,15 @@ func AttachUserIDToContext(ctx context.Context, userID string) context.Context {
 func errorToGRPCErrorCode(err error) codes.Code {
 	code := codes.Internal
 
-	if errors.Is(err, jobmanager.JobExistsError) {
+	if errors.Is(err, jobmanager.ErrJobExists) {
 		code = codes.AlreadyExists
-	} else if errors.Is(err, jobmanager.JobNotFoundError) {
+	} else if errors.Is(err, jobmanager.ErrJobNotFound) {
 		code = codes.NotFound
-	} else if errors.Is(err, jobmanager.InvalidJobIDError) {
+	} else if errors.Is(err, jobmanager.ErrInvalidJobID) {
 		code = codes.InvalidArgument
-	} else if errors.Is(err, jobmanager.InvalidArgument) {
+	} else if errors.Is(err, jobmanager.ErrInvalidArgument) {
 		code = codes.InvalidArgument
-	} else if errors.Is(err, jobmanager.Unauthenticated) {
+	} else if errors.Is(err, jobmanager.ErrUnauthenticated) {
 		code = codes.Unauthenticated
 	} else if errors.Is(err, context.DeadlineExceeded) {
 		code = codes.DeadlineExceeded

@@ -253,7 +253,7 @@ func Test_jobmanagerServer_Stream_NoUserID(t *testing.T) {
 
 	err := server.StreamOutput(&jobmanagerv1.StreamOutputRequest{}, mockServer)
 
-	assert.ErrorIs(t, err, jobmanager.Unauthenticated)
+	assert.ErrorIs(t, err, jobmanager.ErrUnauthenticated)
 }
 
 func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
@@ -269,7 +269,7 @@ func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
 	}
 
 	err := server.StreamOutput(req, mockServer)
-	assert.ErrorIs(t, err, jobmanager.InvalidJobIDError)
+	assert.ErrorIs(t, err, jobmanager.ErrInvalidJobID)
 }
 
 func Test_jobmanagerServer_InvalidStreamType(t *testing.T) {
@@ -285,7 +285,7 @@ func Test_jobmanagerServer_InvalidStreamType(t *testing.T) {
 	}
 
 	err := server.StreamOutput(req, mockServer)
-	assert.ErrorIs(t, err, jobmanager.InvalidArgument)
+	assert.ErrorIs(t, err, jobmanager.ErrInvalidArgument)
 }
 
 func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
@@ -400,7 +400,7 @@ func Test_jobmanagerServer_Multitenant_Stop(t *testing.T) {
 	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), "user2")
 	_, err = server.Stop(ctxUser2, &jobmanagerv1.JobID{Id: job.Id.Id})
 
-	assert.ErrorIs(t, err, jobmanager.JobNotFoundError)
+	assert.ErrorIs(t, err, jobmanager.ErrJobNotFound)
 }
 
 func Test_jobmanagerServer_AdministratorCanSeeAllJobs(t *testing.T) {

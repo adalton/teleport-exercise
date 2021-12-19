@@ -166,7 +166,7 @@ func (s *jobmanagerServer) StreamOutput(
 		byteStream, err = s.jm.StderrStream(userID, request.JobID.Id)
 
 	default:
-		return jobmanager.InvalidArgument
+		return jobmanager.ErrInvalidArgument
 	}
 
 	if err != nil {
