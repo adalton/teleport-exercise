@@ -379,6 +379,30 @@ func Test_jobmanagerServer_Multitenant(t *testing.T) {
 	assert.Equal(t, 0, len(jobList.JobStatusList))
 }
 
+func Test_jobmanagerServer_Multitenant_Stop(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	job, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	// User2 cannot set User1's jobs
+	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), "user2")
+	_, err = server.Stop(ctxUser2, &jobmanagerv1.JobID{Id: job.Id.Id})
+
+	assert.ErrorIs(t, err, jobmanager.JobNotFoundError)
+}
+
 func Test_jobmanagerServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	const (
 		jobName     = "myJob"
