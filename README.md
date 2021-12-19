@@ -1,6 +1,8 @@
 # Teleport Exercise
 This repository contains my implementation of the Teleport programming
-challenge exercise.
+challenge exercise.  The specification for this project can be found at:
+
+https://docs.google.com/document/d/1hwHLGNZ25PtIlB9fvSlNQ3XJN5Ce-L0qLHxjZlG4eyY
 
 ## Tree Organization
 
