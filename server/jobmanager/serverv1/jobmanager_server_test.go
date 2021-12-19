@@ -35,6 +35,7 @@ func Test_jobmanagerServer_Start_NoUserID(t *testing.T) {
 	_, err := server.Start(context.Background(), &jobmanagerv1.JobCreationRequest{})
 
 	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.ErrUnauthenticated)
 }
 
 func Test_jobmanagerServer_Start_WithUserID(t *testing.T) {
@@ -86,7 +87,8 @@ func Test_jobmanagerServer_Start_NameExists(t *testing.T) {
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
-	assert.Error(t, err)
+
+	assert.ErrorIs(t, err, jobmanager.ErrJobExists)
 }
 
 func Test_jobmanagerServer_Stop_NoUserID(t *testing.T) {
@@ -95,7 +97,7 @@ func Test_jobmanagerServer_Stop_NoUserID(t *testing.T) {
 
 	_, err := server.Stop(context.Background(), &jobmanagerv1.JobID{Id: "b13620d4-db7f-46d5-b445-b29af0f87d2c"})
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.ErrUnauthenticated)
 }
 
 func Test_jobmanagerServer_Stop_MalformedJobID(t *testing.T) {
@@ -105,7 +107,7 @@ func Test_jobmanagerServer_Stop_MalformedJobID(t *testing.T) {
 
 	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: "not-a-valid-id"})
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.ErrInvalidJobID)
 }
 
 func Test_jobmanagerServer_Stop_JobDoesNotExist(t *testing.T) {
@@ -115,7 +117,7 @@ func Test_jobmanagerServer_Stop_JobDoesNotExist(t *testing.T) {
 
 	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: "eeafbe44-348f-47ba-ba2b-3e013ee8bb85"})
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.ErrJobNotFound)
 }
 
 func Test_jobmanagerServer_Stop_JobExists(t *testing.T) {
@@ -146,7 +148,7 @@ func Test_jobmanagerServer_Query_NoUserID(t *testing.T) {
 
 	_, err := server.Query(context.Background(), &jobmanagerv1.JobID{Id: "3e3d8936-5fd7-46bb-9fd2-8423c607a0b2"})
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.ErrUnauthenticated)
 }
 
 func Test_jobmanagerServer_Query_MalformedJobID(t *testing.T) {
@@ -156,7 +158,7 @@ func Test_jobmanagerServer_Query_MalformedJobID(t *testing.T) {
 
 	_, err := server.Query(ctx, &jobmanagerv1.JobID{Id: "not-a-valid-jobID"})
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.ErrInvalidJobID)
 }
 
 func Test_jobmanagerServer_Query_JobExists(t *testing.T) {
@@ -196,7 +198,7 @@ func Test_jobmanagerServer_List_NoUserID(t *testing.T) {
 
 	_, err := server.List(context.Background(), &jobmanagerv1.NilMessage{})
 
-	assert.Error(t, err)
+	assert.Error(t, err, jobmanager.ErrUnauthenticated)
 }
 
 func Test_jobmanagerServer_List_NoJobs(t *testing.T) {
@@ -346,7 +348,9 @@ func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
 		OutputStream: jobmanagerv1.OutputStream_STDOUT,
 	}
 
-	server.Stop(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})
+	_, err = server.Stop(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})
+	assert.Nil(t, err)
+
 	err = server.StreamOutput(req, mockServer)
 
 	assert.Nil(t, err)
@@ -420,11 +424,122 @@ func Test_jobmanagerServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	// User2 cannot set User1's jobs
-	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
-	jobList, err := server.List(ctxUser2, &jobmanagerv1.NilMessage{})
+	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), "user2")
+	_, err = server.Start(ctxUser2, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	// Superuser can see user1's and user2's jobs
+	ctxAdmin := serverv1.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
+	jobList, err := server.List(ctxAdmin, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(jobList.JobStatusList))
-	assert.Equal(t, "user1", jobList.JobStatusList[0].Owner)
+	assert.Equal(t, 2, len(jobList.JobStatusList))
+	if jobList.JobStatusList[0].Owner == "user1" {
+		assert.Equal(t, "user1", jobList.JobStatusList[0].Owner)
+		assert.Equal(t, "user2", jobList.JobStatusList[1].Owner)
+	} else {
+		assert.Equal(t, "user2", jobList.JobStatusList[0].Owner)
+		assert.Equal(t, "user1", jobList.JobStatusList[1].Owner)
+	}
+}
+
+func Test_jobmanagerServer_User2CannotStopUser1sJob(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	job, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), "user2")
+	_, err = server.Stop(ctxUser2, &jobmanagerv1.JobID{Id: job.Id.Id})
+
+	assert.ErrorIs(t, err, jobmanager.ErrJobNotFound)
+}
+
+func Test_jobmanagerServer_AdministratorCanStopUser1sJob(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	job, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	ctxAdmin := serverv1.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
+	_, err = server.Stop(ctxAdmin, &jobmanagerv1.JobID{Id: job.Id.Id})
+	assert.Nil(t, err)
+
+	jobStatus, err := server.Query(ctxUser1, &jobmanagerv1.JobID{Id: job.Id.Id})
+	assert.Nil(t, err)
+
+	assert.False(t, jobStatus.IsRunning)
+}
+
+func Test_jobmanagerServer_User2CannotQueryUser1sJob(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	job, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), "user2")
+	_, err = server.Query(ctxUser2, &jobmanagerv1.JobID{Id: job.Id.Id})
+
+	assert.ErrorIs(t, err, jobmanager.ErrJobNotFound)
+}
+
+func Test_jobmanagerServer_AdministratorCanQueryUser1sJob(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	job, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	ctxAdmin := serverv1.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
+	jobStatus, err := server.Query(ctxAdmin, &jobmanagerv1.JobID{Id: job.Id.Id})
+
+	assert.Nil(t, err)
+	assert.Equal(t, job.Id.Id, jobStatus.Job.Id.Id)
 }
