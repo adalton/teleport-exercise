@@ -116,14 +116,14 @@ message JobStatusList {
 // the JobManager can stream from the process.
 enum OutputStream {
     // The unset value
-    UNSET = 0;
+    OutputStream_UNSPECIFIED = 0;
 
     // Stream the process’ standard output stream
-    STDOUT = 1;
+    OutputStream_STDOUT = 1;
 
 
     // Stream the process’ standard error stream
-    STDERR = 2;
+    OutputStream_STDERR = 2;
 }
 
 // The StreamOutputRequest message is used to request that the service

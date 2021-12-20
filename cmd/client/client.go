@@ -172,9 +172,9 @@ func main() {
 		var streamID jobmanagerv1.OutputStream
 
 		if os.Args[1] == "stdout" {
-			streamID = jobmanagerv1.OutputStream_STDOUT
+			streamID = jobmanagerv1.OutputStream_OutputStream_STDOUT
 		} else {
-			streamID = jobmanagerv1.OutputStream_STDERR
+			streamID = jobmanagerv1.OutputStream_OutputStream_STDERR
 		}
 
 		ctx, cancel := streamContext()

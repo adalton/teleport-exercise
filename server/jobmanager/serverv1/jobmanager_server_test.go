@@ -267,7 +267,7 @@ func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	req := &jobmanagerv1.StreamOutputRequest{
 		JobID:        &jobmanagerv1.JobID{Id: "not-a-valid-jobID"},
-		OutputStream: jobmanagerv1.OutputStream_STDOUT,
+		OutputStream: jobmanagerv1.OutputStream_OutputStream_STDOUT,
 	}
 
 	err := server.StreamOutput(req, mockServer)
@@ -314,7 +314,7 @@ func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
 
 	req := &jobmanagerv1.StreamOutputRequest{
 		JobID:        &jobmanagerv1.JobID{Id: job.Id.Id},
-		OutputStream: jobmanagerv1.OutputStream_STDERR,
+		OutputStream: jobmanagerv1.OutputStream_OutputStream_STDERR,
 	}
 
 	cancel() // Intentially calling this here, not deferring it
@@ -345,7 +345,7 @@ func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
 
 	req := &jobmanagerv1.StreamOutputRequest{
 		JobID:        &jobmanagerv1.JobID{Id: job.Id.Id},
-		OutputStream: jobmanagerv1.OutputStream_STDOUT,
+		OutputStream: jobmanagerv1.OutputStream_OutputStream_STDOUT,
 	}
 
 	_, err = server.Stop(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})

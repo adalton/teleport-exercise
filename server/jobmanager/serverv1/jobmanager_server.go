@@ -159,10 +159,10 @@ func (s *jobmanagerServer) StreamOutput(
 	var byteStream *io.ByteStream
 
 	switch streamType := request.GetOutputStream(); streamType {
-	case jobmanagerv1.OutputStream_STDOUT:
+	case jobmanagerv1.OutputStream_OutputStream_STDOUT:
 		byteStream, err = s.jm.StdoutStream(userID, request.JobID.Id)
 
-	case jobmanagerv1.OutputStream_STDERR:
+	case jobmanagerv1.OutputStream_OutputStream_STDERR:
 		byteStream, err = s.jm.StderrStream(userID, request.JobID.Id)
 
 	default:
