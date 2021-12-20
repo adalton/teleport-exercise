@@ -32,8 +32,8 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "jobmanager",
 	Short: "Run the job manager server",
-	Run: func(cmd *cobra.Command, args []string) {
-		runServer()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runServer(cmd.Context())
 	},
 }
 
@@ -46,13 +46,13 @@ func init() {
 		"The <address>:<port> on which this server should listen for incoming requests")
 }
 
-func runServer() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+func runServer(ctx context.Context) error {
+	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	listener, err := net.Listen("tcp", argAddress)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer listener.Close()
 
@@ -65,8 +65,10 @@ func runServer() {
 	)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func main() {
