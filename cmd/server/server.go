@@ -47,8 +47,8 @@ func init() {
 }
 
 func runServer() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	listener, err := net.Listen("tcp", argAddress)
 	if err != nil {
