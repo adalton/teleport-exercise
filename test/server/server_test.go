@@ -206,7 +206,7 @@ func runServer(
 	wg *sync.WaitGroup,
 	t *testing.T,
 	caCert, serverCert, serverKey []byte,
-) (port string, err error) {
+) (hostPort string, err error) {
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return "", err
