@@ -134,8 +134,8 @@ func (c *Client) StreamStderr(ctx context.Context, jobID string, out io.Writer) 
 }
 
 // Close closes the connection to the JobManager server.
-func (c *Client) Close() {
-	c.conn.Close()
+func (c *Client) Close() error {
+	return c.conn.Close()
 }
 
 func jobStatusRpcToLocal(jobStatus *jobmanagerv1.JobStatus) *JobStatus {
