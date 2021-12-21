@@ -71,7 +71,7 @@ func query(cmd *cobra.Command, jobIDs []string) error {
 }
 
 func renderJobStatusList(jobStatus []*jobmanager.JobStatus) {
-	isAdmin := argUserID == "administrator"
+	isAdmin := argUserID == jobmanager.Superuser
 	header := []string{"Owner", "Name", "ID", "Running", "Pid", "Exit Code", "Signal", "Error"}
 
 	if !isAdmin {
