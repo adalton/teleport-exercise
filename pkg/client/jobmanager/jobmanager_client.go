@@ -126,7 +126,7 @@ func (c *Client) StreamStdout(ctx context.Context, jobID string, out io.Writer) 
 	return c.stream(ctx, jobID, out, jobmanagerv1.OutputStream_OutputStream_STDOUT)
 }
 
-// StreamStdout invokes an RPC on the JobManager server to stream the standard
+// StreamStderr invokes an RPC on the JobManager server to stream the standard
 // error of the job with the given jobID.  This function will block until either
 // (1) the context is interrupted, or (2) the job completes.
 func (c *Client) StreamStderr(ctx context.Context, jobID string, out io.Writer) error {
