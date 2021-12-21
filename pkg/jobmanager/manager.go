@@ -14,7 +14,6 @@ limitations under the License.
 package jobmanager
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
@@ -75,7 +74,6 @@ func NewManager() *Manager {
 	}
 
 	return NewManagerDetailed(NewJob, controllers)
-
 }
 
 // NewManagerDetailed returns a new Manger with the given values.
@@ -107,7 +105,7 @@ func (m *Manager) Start(userID, jobName, programPath string, arguments []string)
 	}
 
 	if _, exists := m.jobsByUserByJobName[userID][jobName]; exists {
-		return nil, fmt.Errorf("job with name '%s' exists already", jobName)
+		return nil, ErrJobExists
 	}
 
 	job := m.jobConstructor(userID, jobName, m.controllers, programPath, arguments...)
@@ -121,13 +119,18 @@ func (m *Manager) Start(userID, jobName, programPath string, arguments []string)
 
 // Stop stops an existing job with the given jobID for the given userID.
 func (m *Manager) Stop(userID, jobID string) error {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	if err := validateJobID(jobID); err != nil {
+		return err
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	job, err := m.findJobByUser(userID, jobID)
 	if err != nil {
 		return err
 	}
+
 	return job.Stop()
 }
 
@@ -158,6 +161,10 @@ func (m *Manager) List(userID string) []*JobStatus {
 // Status returns the status of the job with the given JobID owned by
 // the given userID.
 func (m *Manager) Status(userID, jobID string) (*JobStatus, error) {
+	if err := validateJobID(jobID); err != nil {
+		return nil, err
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -165,12 +172,17 @@ func (m *Manager) Status(userID, jobID string) (*JobStatus, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return job.Status(), nil
 }
 
 // StdoutStream returns an io.ByteStream for reading the standard output generated
 // by the job with the given jobID own by the given userID.
 func (m *Manager) StdoutStream(userID, jobID string) (*io.ByteStream, error) {
+	if err := validateJobID(jobID); err != nil {
+		return nil, err
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -178,13 +190,17 @@ func (m *Manager) StdoutStream(userID, jobID string) (*io.ByteStream, error) {
 	if err != nil {
 		return nil, err
 	}
-	return job.StdoutStream(), nil
 
+	return job.StdoutStream(), nil
 }
 
 // Stderr returns an io.ByteStream for reading the standard error generated
 // by the job with the given jobID own by the given userID.
 func (m *Manager) StderrStream(userID, jobID string) (*io.ByteStream, error) {
+	if err := validateJobID(jobID); err != nil {
+		return nil, err
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -192,12 +208,14 @@ func (m *Manager) StderrStream(userID, jobID string) (*io.ByteStream, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return job.StderrStream(), nil
 }
 
 // findJobByUser finds a the job with the given jobID that is owned by
 // the given userID.  If no such job is found, it returns an error.
-// The caller must own the read lock associated with the given Manager.
+// The caller must own (at least) the read lock associated with the
+// given Manager.
 func (m *Manager) findJobByUser(userID, jobID string) (Job, error) {
 	if userID == Superuser {
 		if job, exists := m.allJobsByJobID[jobID]; exists {
@@ -211,5 +229,15 @@ func (m *Manager) findJobByUser(userID, jobID string) (Job, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("job '%s' does not exist", jobID)
+	return nil, ErrJobNotFound
+}
+
+// validateJobID ensures that the given jobID is in the supported format.
+// If it is not, it returns an InvalidJobID error.
+func validateJobID(jobID string) error {
+	if _, err := uuid.Parse(jobID); err != nil {
+		return ErrInvalidJobID
+	}
+
+	return nil
 }

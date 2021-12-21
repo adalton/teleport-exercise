@@ -51,6 +51,7 @@ func Test_MemoryBuffer_WriteAfterClose(t *testing.T) {
 
 	err := b.Close()
 	assert.Nil(t, err)
+	assert.True(t, b.Closed())
 
 	_, err = b.Write([]byte(""))
 

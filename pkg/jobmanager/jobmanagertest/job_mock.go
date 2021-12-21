@@ -15,12 +15,23 @@ package jobmanagertest
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/adalton/teleport-exercise/pkg/cgroup/cgroupv1"
 	"github.com/adalton/teleport-exercise/pkg/io"
 	"github.com/adalton/teleport-exercise/pkg/jobmanager"
 
 	"github.com/google/uuid"
+)
+
+const (
+	DefaultStandardOutput         = "this is standard output"
+	DefaultStandardError          = "this is standard error"
+	DefaultPID                    = 1234
+	DefaultSignalWhileRunning     = syscall.Signal(-1)
+	DefaultSignalAfterStop        = syscall.SIGKILL
+	DefaultExitStatusWhileRunning = -1
+	DefaultExitStatusAfterStop    = 128 + int(DefaultSignalAfterStop)
 )
 
 // mockJob is a simple implementation of the Job interface for use by unit tests
@@ -59,8 +70,8 @@ func (m *mockJob) Start() error {
 	}
 
 	m.running = true
-	_, _ = m.stdout.Write([]byte("this is standard output"))
-	_, _ = m.stderr.Write([]byte("this is standard error"))
+	_, _ = m.stdout.Write([]byte(DefaultStandardOutput))
+	_, _ = m.stderr.Write([]byte(DefaultStandardError))
 
 	return nil
 }
@@ -81,19 +92,23 @@ func (m *mockJob) StderrStream() *io.ByteStream {
 }
 
 func (m *mockJob) Status() *jobmanager.JobStatus {
-	exitCode := -1
+	exitCode := DefaultExitStatusWhileRunning
+	signalNumber := DefaultSignalWhileRunning
 
-	if m.running {
-		exitCode = 0
+	if !m.running {
+		exitCode = DefaultExitStatusAfterStop
+		signalNumber = DefaultSignalAfterStop
 	}
 
 	return &jobmanager.JobStatus{
-		Owner:    m.owner,
-		Name:     m.name,
-		ID:       m.id.String(),
-		Running:  m.running,
-		Pid:      1234,
-		ExitCode: exitCode,
+		Owner:     m.owner,
+		Name:      m.name,
+		ID:        m.id.String(),
+		Running:   m.running,
+		Pid:       DefaultPID,
+		SignalNum: signalNumber,
+		ExitCode:  exitCode,
+		RunError:  nil,
 	}
 }
 

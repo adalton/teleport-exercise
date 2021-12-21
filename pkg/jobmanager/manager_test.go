@@ -213,7 +213,7 @@ func Test_JobManager_StdoutStream_MatchingUser(t *testing.T) {
 	stream, err := jm.StdoutStream(userName1, job.ID().String())
 
 	assert.Nil(t, err)
-	assert.Equal(t, "this is standard output", string(<-stream.Stream()))
+	assert.Equal(t, jobmanagertest.DefaultStandardOutput, string(<-stream.Stream()))
 }
 
 func Test_JobManager_StdoutStream_NonmatchingUser(t *testing.T) {
@@ -244,7 +244,7 @@ func Test_JobManager_StdoutStream_Superuser(t *testing.T) {
 	stream, err := jm.StdoutStream(jobmanager.Superuser, job.ID().String())
 
 	assert.Nil(t, err)
-	assert.Equal(t, "this is standard output", string(<-stream.Stream()))
+	assert.Equal(t, jobmanagertest.DefaultStandardOutput, string(<-stream.Stream()))
 }
 
 func Test_JobManager_StderrStream_MatchingUser(t *testing.T) {
@@ -260,7 +260,7 @@ func Test_JobManager_StderrStream_MatchingUser(t *testing.T) {
 	stream, err := jm.StderrStream(userName1, job.ID().String())
 
 	assert.Nil(t, err)
-	assert.Equal(t, "this is standard error", string(<-stream.Stream()))
+	assert.Equal(t, jobmanagertest.DefaultStandardError, string(<-stream.Stream()))
 }
 
 func Test_JobManager_StderrStream_NonmatchingUser(t *testing.T) {
@@ -291,5 +291,5 @@ func Test_JobManager_StderrStream_Superuser(t *testing.T) {
 	stream, err := jm.StderrStream(jobmanager.Superuser, job.ID().String())
 
 	assert.Nil(t, err)
-	assert.Equal(t, "this is standard error", string(<-stream.Stream()))
+	assert.Equal(t, jobmanagertest.DefaultStandardError, string(<-stream.Stream()))
 }

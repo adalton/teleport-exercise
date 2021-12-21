@@ -14,13 +14,17 @@ SHELL = bash
 MKDIR = mkdir -p
 BUILDDIR = build
 COVERAGEDIR=$(BUILDDIR)/coverage
+EXECUTABLES =
+EXECUTABLES += $(BUILDDIR)/cgexec
+EXECUTABLES += $(BUILDDIR)/jobmanager
+EXECUTABLES += $(BUILDDIR)/jobctl
 
 GOTEST := go test
 ifneq ($(shell which gotestsum),)
 	GOTEST := gotestsum -- 
 endif
 
-all: $(BUILDDIR) $(BUILDDIR)/cgexec
+all: proto $(EXECUTABLES)
 
 $(BUILDDIR):
 	$(MKDIR) $(BUILDDIR)
@@ -32,8 +36,22 @@ $(BUILDDIR)/cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build
 $(BUILDDIR)/cgexec: dep $(BUILDDIR) cmd/cgexec/cgexec.go
 	go build -race -o $(BUILDDIR)/cgexec cmd/cgexec/cgexec.go
 
+$(BUILDDIR)/jobmanager: dep $(BUILDDIR) cmd/server/server.go
+	go build -race -o $(BUILDDIR)/jobmanager cmd/server/server.go
+
+$(BUILDDIR)/jobctl: dep $(BUILDDIR) cmd/client/client.go
+	go build -race -o $(BUILDDIR)/jobctl cmd/client/client.go
+
+proto:
+	@if ! which protoc > /dev/null; then \
+		echo "error: protoc not installed" >&2; \
+		exit 1; \
+	fi
+	protoc --proto_path=./service/jobmanager/jobmanagerv1/ --go_out=./service/jobmanager/jobmanagerv1 --go_opt=paths=source_relative --go-grpc_out=./service/jobmanager/jobmanagerv1 --go-grpc_opt=paths=source_relative ./service/jobmanager/jobmanagerv1/jobmanager.proto
+.PHONY: proto
+
 clean:
-	$(RM) -r $(BUILDDIR)
+	$(RM) -r $(BUILDDIR) service/jobmanager/jobmanagerv1/jobmanager_grpc.pb.go service/jobmanager/jobmanagerv1/jobmanager.pb.go
 .PHONY: clean
 
 $(COVERAGEDIR):
@@ -46,9 +64,9 @@ test: vet $(COVERAGEDIR)
 .PHONY: test
 
 # Not using $(GOTEST) here since root might not have it installed
+inttest: CGEXEC_PATH=$(shell readlink -f ./build/cgexec)
 inttest: vet $(BUILDDIR)/cgexec
-	@cp $(BUILDDIR)/cgexec /tmp
-	@sudo go test -v -race --tags=integration ./test/...
+	@sudo bash -c 'CGEXEC_PATH=$(CGEXEC_PATH) go test -v -race -count=1 --tags=integration ./test/...'
 .PHONY: inttest
 
 vet: dep
@@ -57,4 +75,5 @@ vet: dep
 
 dep:
 	@go mod download
+	@go mod tidy
 .PHONY: dep
