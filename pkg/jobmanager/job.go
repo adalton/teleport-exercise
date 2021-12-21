@@ -212,7 +212,7 @@ func (j *concreteJob) Status() *JobStatus {
 	}
 
 	if j.runErrors != nil {
-		status.RunError = fmt.Errorf("run error: %v", j.runErrors)
+		status.RunError = fmt.Errorf("%v", j.runErrors)
 	}
 
 	if j.cmd.Process != nil {
