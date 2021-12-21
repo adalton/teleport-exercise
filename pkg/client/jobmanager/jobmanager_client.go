@@ -180,7 +180,10 @@ func (c *Client) stream(
 			return err
 		}
 
-		out.Write(output.Output)
+		_, err = out.Write(output.Output)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
