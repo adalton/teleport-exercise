@@ -177,7 +177,7 @@ func (s *jobmanagerServer) StreamOutput(
 	for {
 		select {
 		case <-response.Context().Done():
-			return context.Canceled
+			return response.Context().Err()
 
 		case data, ok := <-byteStream.Stream():
 			if !ok {

@@ -51,18 +51,18 @@ func query(cmd *cobra.Command, jobIDs []string) error {
 	jobStatusList := make([]*jobmanager.JobStatus, 0, len(jobIDs))
 
 	for _, jobID := range jobIDs {
-		func() {
-			ctx, cancel := context.WithTimeout(cmd.Context(), shortOperationTimeout)
-			defer cancel()
+		// Intentionally deferring the call to cancel in the loop.  This is a
+		// short-lived command and we do not expect len(jobIDs) to be large
+		ctx, cancel := context.WithTimeout(cmd.Context(), shortOperationTimeout)
+		defer cancel()
 
-			status, err := c.Query(ctx, jobID)
-			if err != nil {
-				lastError = err
-				return
-			}
+		status, err := c.Query(ctx, jobID)
+		if err != nil {
+			lastError = err
+			continue
+		}
 
-			jobStatusList = append(jobStatusList, status)
-		}()
+		jobStatusList = append(jobStatusList, status)
 	}
 
 	renderJobStatusList(jobStatusList)
