@@ -190,7 +190,7 @@ func Test_clientServer_AdministratorCanSeeAllJobs(t *testing.T) {
 
 	adminClient, err := jobmanager.NewClient(jobmanager.Superuser, hostPort)
 	require.Nil(t, err)
-	defer user1Client.Close()
+	defer adminClient.Close()
 
 	jobList, err := adminClient.List(context.Background())
 
