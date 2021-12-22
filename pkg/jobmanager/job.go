@@ -208,18 +208,19 @@ func (j *concreteJob) Status() *JobStatus {
 		ID:        j.id.String(),
 		Running:   j.running,
 		Pid:       -1,
+		ExitCode:  -1,
 		SignalNum: syscall.Signal(-1),
 	}
 
 	if j.runErrors != nil {
-		status.RunError = fmt.Errorf("run error: %v", j.runErrors)
+		status.RunError = fmt.Errorf("%v", j.runErrors)
 	}
 
 	if j.cmd.Process != nil {
 		status.Pid = j.cmd.Process.Pid
 	}
 
-	if state := j.cmd.ProcessState; state != nil {
+	if state := j.cmd.ProcessState; !j.running && state != nil {
 		if sys := state.Sys(); sys != nil {
 			if ws, ok := sys.(syscall.WaitStatus); ok {
 				status.SignalNum = ws.Signal()

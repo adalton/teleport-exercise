@@ -320,7 +320,7 @@ func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
 	cancel() // Intentially calling this here, not deferring it
 	err = server.StreamOutput(req, mockServer)
 
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {

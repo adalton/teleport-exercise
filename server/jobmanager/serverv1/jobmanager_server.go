@@ -176,12 +176,8 @@ func (s *jobmanagerServer) StreamOutput(
 
 	for {
 		select {
-		// We don't have a specific requirement to support a deadline for the
-		// stream operation from our client. But, since this is an API, someone
-		// might develop a client for it that does want to set a deadline.
-		// This will support that.
 		case <-response.Context().Done():
-			return context.DeadlineExceeded
+			return response.Context().Err()
 
 		case data, ok := <-byteStream.Stream():
 			if !ok {
