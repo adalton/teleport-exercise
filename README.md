@@ -254,18 +254,18 @@ The following are some things that I observed from the team during the
 interview process:
 
 * The team doesn't like mocking APIs in order to perform unit testing
-  ** https://github.com/adalton/teleport-exercise/pull/1#discussion\_r768012202
-  ** https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771454460
+  * https://github.com/adalton/teleport-exercise/pull/1#discussion\_r768012202
+  * https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771454460
 
 * The team doesn't like unit testing gRPC servers at all; they prefer using
   only full-blown integration tests.
-  ** https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771448935
-  ** https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771472278
+  * https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771448935
+  * https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771472278
 
 * In tests, the team want to assert everything that could possibly go wrong
   instead of an Arrange/Act/Assert-based approach that asserts only the things
   a test is designed to prove:
-  ** https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771451513
+  * https://github.com/adalton/teleport-exercise/pull/2#discussion\_r771451513
 
 ## Post-Interview Feedback and Response
 
